@@ -50,3 +50,6 @@ fabric.properties
 
 # Python virtualenv
 venv/
+
+# Python compiled files
+*.pyc
