@@ -1,4 +1,5 @@
 from scrapy import Spider as ScrapySpider, Request
+import re
 from bs4 import BeautifulSoup
 from .item import MovieItem, ActorItem
 
@@ -77,6 +78,23 @@ class Spider(ScrapySpider):
         except AttributeError:
             yield {}
 
+    def parse_movie(self, response):
+        try:
+            soup = BeautifulSoup(response.text, 'lxml')
+            name = soup.find(id="firstHeading").text
+            # strip off root url
+            link = response.request.url[len(ROOT):]
+            info_box = soup.find("table", attrs={"class": "infobox vevent"})
+            income = self.get_income(info_box)
+            starring = self.get_starring(info_box)
+            yield MovieItem(name=name, income=income, url=link, actors=starring)
+
+            # generate new requests
+            for actor in starring:
+                yield Request(ROOT + actor, meta={'is_movie': False})
+        except AttributeError:
+            yield {}
+
     def get_age(self, soup):
         """
         A helper method to get the age of current actor
@@ -101,20 +119,6 @@ class Spider(ScrapySpider):
             # cannot parse the age
             return None
 
-    def parse_movie(self, response):
-        soup = BeautifulSoup(response.text, 'lxml')
-        name = soup.find(id="firstHeading").text
-        # strip off root url
-        link = response.request.url[len(ROOT):]
-        info_box = soup.find("table", attrs={"class": "infobox vevent"})
-        income = self.get_income(info_box)
-        starring = self.get_starring(info_box)
-        yield MovieItem(name=name, income=income, url=link, actors=starring)
-
-        # generate new requests
-        for actor in starring:
-            yield Request(ROOT + actor, meta={'is_movie': False})
-
     def get_income(self, info_box):
         """
         A helper method to get the box office of current film
@@ -124,9 +128,7 @@ class Spider(ScrapySpider):
         try:
             income = info_box.find(text="Box office").find_parent() \
                 .find_next_sibling().next_element
-            # only store the digit part
-            # TODO: fix units and currency
-            return int("".join(c for c in income if c.isdigit()))
+            return self.parse_currency(income)
         except AttributeError:
             return None
 
@@ -141,3 +143,26 @@ class Spider(ScrapySpider):
             return [url["href"] for url in starring.find_all("a")]
         except AttributeError:
             return []
+
+    def parse_currency(self, income):
+        """
+        A helper method to convert string representation of income to float that
+        represent the value
+        :param income: the string representation of income
+        :return: the income as float
+        """
+        # use regular expression to remove everything in parenthesis, if any
+        income = re.sub("\(.*\)", "", income).strip()
+
+        # remove currency symbol, million/billion endings and comma
+        income_value = float(income.strip("$mbtrillion").replace(',', ''))
+
+        # augmented by the endings
+        if income.endswith("million"):
+            income_value *= 1e6
+        elif income.endswith("billion"):
+            income_value *= 1e9
+        elif income.endswith("trillion"):
+            income_value *= 1e12
+
+        return income_value
