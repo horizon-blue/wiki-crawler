@@ -19,7 +19,7 @@ class Spider(ScrapySpider):
             "scrapy.downloadermiddlewares.useragent.UserAgentMiddleware": None,
             "scrapy_fake_useragent.middleware.RandomUserAgentMiddleware": 400,
         },
-        "DOWNLOAD_DELAY": 0.25,
+        "DOWNLOAD_DELAY": 1,
     }
 
     def __init__(self, start_task=(DEFAULT_START_URL, DEFAULT_IS_MOVIE), *args, **kwargs):
@@ -52,33 +52,34 @@ class Spider(ScrapySpider):
             yield from self.parse_actor(response)
 
     def parse_actor(self, response):
+        try:
+            soup = BeautifulSoup(response.text, 'lxml')
 
-        soup = BeautifulSoup(response.text, 'lxml')
+            name = soup.find(id="firstHeading").text
+            age = self.get_age(soup)
+            # strip off root url
+            link = response.request.url[len(ROOT):]
+            movies = []
 
-        name = soup.find(id="firstHeading").text
-        age = self.get_age(soup)
-        # strip off root url
-        link = response.request.url[len(ROOT):]
-        movies = []
+            # get all links before next h2 tag
+            filmography = soup.find("span", id="Filmography").find_parent("h2").find_next_sibling()
 
-        # get all links before next h2 tag
-        filmography = soup.find("span", id="Filmography").find_parent("h2").find_next_sibling()
-
-        while filmography.name != "h2":
-            urls = filmography.find_all("a")
-            for url in urls:
-                href = url["href"]
-                movies.append(href)
-                # scrapy filters duplicated urls on default
-                yield Request(ROOT + href, meta={'is_movie': True})
-                break
-            filmography = filmography.find_next_sibling()
-        # return the final parsed object
-        yield ActorItem(name=name, age=age, movies=movies, url=link)
+            while filmography.name != "h2":
+                urls = filmography.find_all("a")
+                for url in urls:
+                    href = url["href"]
+                    movies.append(href)
+                    # scrapy filters duplicated urls on default
+                    yield Request(ROOT + href, meta={'is_movie': True})
+                filmography = filmography.find_next_sibling()
+            # return the final parsed object
+            yield ActorItem(name=name, age=age, movies=movies, url=link)
+        except AttributeError:
+            yield {}
 
     def get_age(self, soup):
         """
-        A helper class to get the age of current actor
+        A helper method to get the age of current actor
         :param soup: the beautiful soup object for the entire page
         :return: age of the actor, or none if cannot find anything
         """
@@ -102,4 +103,41 @@ class Spider(ScrapySpider):
 
     def parse_movie(self, response):
         soup = BeautifulSoup(response.text, 'lxml')
-        yield {}
+        name = soup.find(id="firstHeading").text
+        # strip off root url
+        link = response.request.url[len(ROOT):]
+        info_box = soup.find("table", attrs={"class": "infobox vevent"})
+        income = self.get_income(info_box)
+        starring = self.get_starring(info_box)
+        yield MovieItem(name=name, income=income, url=link, actors=starring)
+
+        # generate new requests
+        for actor in starring:
+            yield Request(ROOT + actor, meta={'is_movie': False})
+
+    def get_income(self, info_box):
+        """
+        A helper method to get the box office of current film
+        :param info_box: the beautiful soup object for the info box
+        :return: gross income of the film, or none if cannot find anything
+        """
+        try:
+            income = info_box.find(text="Box office").find_parent() \
+                .find_next_sibling().next_element
+            # only store the digit part
+            # TODO: fix units and currency
+            return int("".join(c for c in income if c.isdigit()))
+        except AttributeError:
+            return None
+
+    def get_starring(self, info_box):
+        """
+        A helper method to get all actors for a given movie
+        :param info_box: the beautiful soup object for the info box
+        :return: a list of links to actors (in the same order as they are listed in wikipedia)
+        """
+        try:
+            starring = info_box.find(text="Starring").find_parent("tr")
+            return [url["href"] for url in starring.find_all("a")]
+        except AttributeError:
+            return []
