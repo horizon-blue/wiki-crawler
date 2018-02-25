@@ -1,8 +1,9 @@
 from scrapy import Spider as ScrapySpider, Request
 from bs4 import BeautifulSoup
+from .item import MovieItem, ActorItem
 
 ROOT = "https://en.wikipedia.org"
-DEFAULT_START_URL = ROOT + "/wiki/Michael_Jackson"
+DEFAULT_START_URL = ROOT + "/wiki/Morgan_Freeman"
 DEFAULT_IS_MOVIE = False
 
 
@@ -56,6 +57,8 @@ class Spider(ScrapySpider):
 
         name = soup.find(id="firstHeading").text
         age = self.get_age(soup)
+        # strip off root url
+        link = response.request.url[len(ROOT):]
         movies = []
 
         # get all links before next h2 tag
@@ -70,6 +73,8 @@ class Spider(ScrapySpider):
                 yield Request(ROOT + href, meta={'is_movie': True})
                 break
             filmography = filmography.find_next_sibling()
+        # return the final parsed object
+        yield ActorItem(name=name, age=age, movies=movies, url=link)
 
     def get_age(self, soup):
         """
