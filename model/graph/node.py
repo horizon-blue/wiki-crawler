@@ -23,3 +23,11 @@ class Node(ABC):
         :return: hash that uniquely identify the node
         """
         return hash(self.url)
+
+
+class ActorNode(Node):
+    age = None
+
+
+class MovieNode(Node):
+    pass
