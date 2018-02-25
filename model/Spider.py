@@ -57,7 +57,9 @@ class Spider(ScrapySpider):
             soup = BeautifulSoup(response.text, 'lxml')
 
             name = soup.find(id="firstHeading").text
-            age = self.get_age(soup)
+
+            info_box = soup.find("table", attrs={"class": "infobox vevent"})
+            age = self.get_age(info_box)
             # strip off root url
             link = response.request.url[len(ROOT):]
             movies = []
@@ -95,15 +97,15 @@ class Spider(ScrapySpider):
         except AttributeError:
             yield {}
 
-    def get_age(self, soup):
+    def get_age(self, info_box):
         """
         A helper method to get the age of current actor
-        :param soup: the beautiful soup object for the entire page
+        :param info_box: info_box: the beautiful soup object for the info box
         :return: age of the actor, or none if cannot find anything
         """
         # try to find the current age of actor, if he/she is still alive
         try:
-            age = soup.find("span", attrs={"class": "noprint ForceAgeToShow"})
+            age = info_box.find("span", attrs={"class": "noprint ForceAgeToShow"})
             if age is not None:
                 # the actor is still alive
                 age = age.text
@@ -113,7 +115,7 @@ class Spider(ScrapySpider):
                     .find_parent().find_next_sibling().previous_element
 
             # gather all digits in age description (age xxx) or (aged xxx)
-            return int("".join(c for c in age if c.isdigit()))
+            return int(re.search(r"aged? (\d+)", age).group(1))
 
         except AttributeError:
             # cannot parse the age
@@ -149,20 +151,23 @@ class Spider(ScrapySpider):
         A helper method to convert string representation of income to float that
         represent the value
         :param income: the string representation of income
-        :return: the income as float
+        :return: the income as float, or None if income cannot be parsed
         """
-        # use regular expression to remove everything in parenthesis, if any
-        income = re.sub("\(.*\)", "", income).strip()
+        try:
+            # use regular expression to remove everything in parenthesis, if any
+            income = re.sub(r"\(.*\)", "", income).strip()
 
-        # remove currency symbol, million/billion endings and comma
-        income_value = float(income.strip("$mbtrillion").replace(',', ''))
+            # remove currency symbol, million/billion endings and comma
+            income_value = float(income.strip("$mbtrillion").replace(',', ''))
 
-        # augmented by the endings
-        if income.endswith("million"):
-            income_value *= 1e6
-        elif income.endswith("billion"):
-            income_value *= 1e9
-        elif income.endswith("trillion"):
-            income_value *= 1e12
+            # augmented by the endings
+            if income.endswith("million"):
+                income_value *= 1e6
+            elif income.endswith("billion"):
+                income_value *= 1e9
+            elif income.endswith("trillion"):
+                income_value *= 1e12
+            return income_value
 
-        return income_value
+        except ValueError:
+            return None
