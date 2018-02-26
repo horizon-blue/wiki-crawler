@@ -14,6 +14,7 @@ class Node(ABC):
 
 class ActorNode(Node):
     age = None
+    income = 0
     movies = {}
 
     def __init__(self, name, age):
@@ -26,6 +27,34 @@ class ActorNode(Node):
 
         self.name = name
         self.age = age
+
+    def update(self, other):
+        """
+        Update current actor node using other actor node
+        :param other: the other actor node
+        """
+        if not isinstance(other, ActorNode):
+            return
+        self.age = other.age
+        self.name = other.name
+        self.movies.update(other.movies)
+        # re-calculate the income
+        self.income = 0
+        for movie in self.movies:
+            self.income += self.movies[movie]
+
+    def add_movie(self, movie, income):
+        """
+        Associate actor with the movie and update the actors total income
+        :param movie: link to the movie
+        :param income: income that the actor get from the movie
+        """
+        # overwrite existed value
+        if movie in self.movies:
+            self.income -= self.movies[movie]
+
+        self.movies[movie] = movie
+        self.income += income
 
 
 class MovieNode(Node):
@@ -57,4 +86,4 @@ class MovieNode(Node):
         m = len(actors)
         for index, actor in enumerate(actors):
             n = index + 1
-            self.actors[actor] = 2 * (m + 1 - n) / (m * (m + 1))
+            self.actors[actor] = self.income * 2 * (m + 1 - n) / (m * (m + 1))

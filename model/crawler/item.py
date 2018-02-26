@@ -8,7 +8,6 @@ class Item(ScrapyItem):
 
 class ActorItem(Item):
     age = Field()
-    movies = Field()
 
 
 class MovieItem(Item):

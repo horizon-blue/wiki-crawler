@@ -65,7 +65,6 @@ class Spider(ScrapySpider):
             age = self.get_age(info_box)
             # strip off root url
             link = response.request.url[len(ROOT):]
-            movies = []
 
             # get all links before next h2 tag
             filmography = soup.find("span", id="Filmography").find_parent("h2").find_next_sibling()
@@ -74,12 +73,11 @@ class Spider(ScrapySpider):
                 urls = filmography.find_all("a")
                 for url in urls:
                     href = url["href"]
-                    movies.append(href)
                     # scrapy filters duplicated urls on default
                     yield Request(ROOT + href, meta={'is_movie': True})
                 filmography = filmography.find_next_sibling()
             # return the final parsed object
-            yield ActorItem(name=name, age=age, movies=movies, url=link)
+            yield ActorItem(name=name, age=age, url=link)
         except AttributeError:
             yield {}
 
