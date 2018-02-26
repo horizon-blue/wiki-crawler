@@ -1,6 +1,7 @@
+import os
+import jsonpickle
 from .node import ActorNode, MovieNode
 from ..crawler import ActorItem, MovieItem
-import jsonpickle
 
 
 class Graph:
@@ -10,7 +11,6 @@ class Graph:
         """
         self.movies = {}
         self.actors = {}
-        
 
     def add(self, item):
         """
@@ -52,3 +52,26 @@ class Graph:
                 self.actors[actor] = ActorNode()
             # link movie to actors
             self.actors[actor].add_movie(url, movie_node.get_actor_income(actor))
+
+    @classmethod
+    def load(cls, filename):
+        """
+        Load the graph from given file
+        :param filename: the file to load the graph
+        :return: the graph loaded
+        """
+        with open(filename) as file:
+            return jsonpickle.decode(file.read())
+
+    def dump(self, filename):
+        """
+        dump the graph to the specified file. this method creates the directory if
+        none exists
+        :param filename: the file to create
+        """
+        # creates the directory if none exists
+        # source: https://stackoverflow.com/questions/12517451/automatically-creating-directories-with-file-output
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+        with open(filename, "w") as file:
+            file.write(jsonpickle.encode(self))
