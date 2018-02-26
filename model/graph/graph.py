@@ -56,7 +56,8 @@ class Graph:
         url = movie_item["url"]
         if url in self.movies:  # do nothing if move exists
             return
-        movie_node = MovieNode(movie_item["name"], movie_item["income"], movie_item["actors"])
+        movie_node = MovieNode(movie_item["name"], movie_item["income"], movie_item["release_date"],
+                               movie_item["actors"])
         self.movies[url] = movie_node
 
         for actor in movie_node.actors:

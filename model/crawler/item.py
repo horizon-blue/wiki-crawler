@@ -13,3 +13,4 @@ class ActorItem(Item):
 class MovieItem(Item):
     income = Field()
     actors = Field()
+    release_date = Field()

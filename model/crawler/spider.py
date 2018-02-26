@@ -1,6 +1,7 @@
-from scrapy import Spider as ScrapySpider, Request
 import re
+from scrapy import Spider as ScrapySpider, Request
 from bs4 import BeautifulSoup
+from dateparser import parse as parse_date
 from .item import MovieItem, ActorItem
 
 ROOT = "https://en.wikipedia.org"
@@ -108,7 +109,8 @@ class Spider(ScrapySpider):
             info_box = soup.find("table", attrs={"class": "infobox"})
             income = self.get_income(info_box)
             starring = self.get_starring(info_box)
-            yield MovieItem(name=name, income=income, url=link, actors=starring)
+            release_date = self.get_release_date(info_box)
+            yield MovieItem(name=name, income=income, url=link, actors=starring, release_date=release_date)
 
             # generate new requests
             for actor in starring:
@@ -188,4 +190,16 @@ class Spider(ScrapySpider):
             return income_value
 
         except ValueError:
+            return None
+
+    def get_release_date(self, info_box):
+        """
+        a helper method to get the release date of the movie
+        :param info_box: the beautiful soup object of the info box
+        :return: the release date of the movie, or None if cannot parse
+        """
+        try:
+            release_date = info_box.find("span", attrs={"class": "published"}).text
+            return parse_date(release_date)
+        except AttributeError:
             return None

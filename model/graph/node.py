@@ -65,7 +65,8 @@ class MovieNode(Node):
     """
     The subclass used to store movie information
     """
-    def __init__(self, name, income, actors=None):
+
+    def __init__(self, name, income, release_date, actors=None):
         """
         Create a node to hold value for a movie
         :param name: name of the movie
@@ -78,6 +79,7 @@ class MovieNode(Node):
             raise ValueError("Income cannot be None")
         self.name = name
         self.income = income
+        self.release_date = release_date
         self.actors = {}
         if actors is not None:
             self.set_actors(actors)
