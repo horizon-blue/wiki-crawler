@@ -30,6 +30,7 @@ class Spider(ScrapySpider):
         "EXTENSIONS": {
             "scrapy.extensions.closespider.CloseSpider": 1,
         },
+        "COOKIES_ENABLED": False,
         "DOWNLOAD_DELAY": config.DELAY,
         "CLOSESPIDER_ITEMCOUNT": config.CLOSE_ITEM_COUNT,
         "CLOSESPIDER_TIMEOUT": config.CLOSE_TIMEOUT,
