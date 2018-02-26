@@ -1,6 +1,7 @@
 from scrapy.exceptions import DropItem
 from ..graph import Graph
 from config import JSON_OUTPUT_FILE
+import logging
 
 
 class GraphPipeline:
@@ -26,6 +27,12 @@ class GraphPipeline:
         """
         try:
             self.graph.add(item)
+            count = self.graph.get_counts()
+            # logging
+            logging.info(
+                "Processed {} at {}. "
+                "Current Progress - movies: {}, actors: {}".format(
+                    item.__class__.__name__, item["url"], count[0], count[1]))
             return item
         except (KeyError, ValueError):
             raise DropItem("Incomplete info in %s" % item)
