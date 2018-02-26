@@ -2,6 +2,9 @@ from abc import ABC, abstractmethod
 
 
 class Node(ABC):
+    """
+    The abstract Node class for vertices in graph
+    """
     name = None
 
     @abstractmethod
@@ -13,6 +16,9 @@ class Node(ABC):
 
 
 class ActorNode(Node):
+    """
+    The subclass of Node used to store actor information
+    """
     def __init__(self, name="", age=None):
         """
         Create a node to hold value for an actor
@@ -56,6 +62,9 @@ class ActorNode(Node):
 
 
 class MovieNode(Node):
+    """
+    The subclass used to store movie information
+    """
     def __init__(self, name, income, actors=None):
         """
         Create a node to hold value for a movie

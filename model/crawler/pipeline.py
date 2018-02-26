@@ -5,6 +5,9 @@ JSON_OUTPUT_FILE = "output/out.json"
 
 
 class GraphPipeline:
+    """
+    The pipeline that process the items return by the crawler
+    """
     graph = Graph()
 
     def close_spider(self, _):

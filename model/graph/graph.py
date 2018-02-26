@@ -5,6 +5,9 @@ from ..crawler import ActorItem, MovieItem
 
 
 class Graph:
+    """
+    The graph class that holds all nodes and edges
+    """
     def __init__(self):
         """
         Initialize the graph with two kinds of nodes

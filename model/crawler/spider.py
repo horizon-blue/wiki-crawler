@@ -9,6 +9,9 @@ DEFAULT_IS_MOVIE = False
 
 
 class Spider(ScrapySpider):
+    """
+    The main spider used to crawl wikipedia
+    """
     name = "spider"
     allowed_domains = ["en.wikipedia.org"]
     start_tasks = []
@@ -50,12 +53,22 @@ class Spider(ScrapySpider):
             yield Request(url, meta={'is_movie': is_movie})
 
     def parse(self, response):
+        """
+        Parse the response page based on type of page
+        :param response: the response page
+        :return: parsed Item or Request
+        """
         if response.meta["is_movie"]:
             yield from self.parse_movie(response)
         else:
             yield from self.parse_actor(response)
 
     def parse_actor(self, response):
+        """
+        Parse the actor page from response
+        :param response: the response page
+        :return: parsed ActorItem or Request
+        """
         try:
             soup = BeautifulSoup(response.text, 'lxml')
 
@@ -82,6 +95,11 @@ class Spider(ScrapySpider):
             yield {}
 
     def parse_movie(self, response):
+        """
+        Parse the movie page from response
+        :param response: the response page
+        :return: parsed MovieItem or Request
+        """
         try:
             soup = BeautifulSoup(response.text, 'lxml')
             name = soup.find(id="firstHeading").text
