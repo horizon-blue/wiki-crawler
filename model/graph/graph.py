@@ -15,6 +15,9 @@ class Graph:
         self.movies = {}
         self.actors = {}
 
+        # dictionary for unreached actors
+        self.unreached_actors = {}
+
     def add(self, item):
         """
         Add the item to the graph based on its type
@@ -33,8 +36,14 @@ class Graph:
         actor_node = ActorNode(actor_item["name"], actor_item["age"])
         url = actor_item["url"]
 
-        if url in self.actors:  # actor is already created by movie
-            self.actors[url].update(actor_node)
+        if url in self.unreached_actors:  # actor is already created by movie
+            # remove actor from unreached dict
+            actor = self.unreached_actors[url]
+            self.unreached_actors.pop(url)
+
+            actor.update(actor_node)
+
+            self.actors[url] = actor
         else:
             self.actors[url] = actor_node
 
@@ -52,9 +61,12 @@ class Graph:
 
         for actor in movie_node.actors:
             if actor not in self.actors:  # create the actor for the movie
-                self.actors[actor] = ActorNode()
+                self.unreached_actors[actor] = ActorNode()
+                actor_node = self.unreached_actors[actor]
+            else:
+                actor_node = self.actors[actor]
             # link movie to actors
-            self.actors[actor].add_movie(url, movie_node.get_actor_income(actor))
+            actor_node.add_movie(url, movie_node.get_actor_income(actor))
 
     @classmethod
     def load(cls, filename):
