@@ -53,3 +53,6 @@ venv/
 
 # Python compiled files
 *.pyc
+
+# json output
+output/

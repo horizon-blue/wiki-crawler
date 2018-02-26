@@ -112,7 +112,7 @@ class Spider(ScrapySpider):
                 age = age.text
             else:
                 # the actor is dead.. need to find the death information
-                age = soup.find("span", attrs={"class": "dday deathdate"}) \
+                age = info_box.find("span", attrs={"class": "dday deathdate"}) \
                     .find_parent().find_next_sibling().previous_element
             # gather all digits in age description (age xxx) or (aged xxx)
             return int(re.search(r"aged?\D*(\d+)", age).group(1))
@@ -131,7 +131,7 @@ class Spider(ScrapySpider):
             income = info_box.find(text="Box office").find_parent() \
                 .find_next_sibling().next_element
             return self.parse_currency(income)
-        except AttributeError:
+        except (AttributeError, TypeError):
             return None
 
     def get_starring(self, info_box):

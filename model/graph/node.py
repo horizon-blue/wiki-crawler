@@ -13,11 +13,7 @@ class Node(ABC):
 
 
 class ActorNode(Node):
-    age = None
-    income = 0
-    movies = {}
-
-    def __init__(self, name, age):
+    def __init__(self, name="", age=None):
         """
         Create a node to hold value for an actor
         :param name: name of the actor
@@ -27,6 +23,8 @@ class ActorNode(Node):
 
         self.name = name
         self.age = age
+        self.income = 0
+        self.movies = {}
 
     def update(self, other):
         """
@@ -53,14 +51,11 @@ class ActorNode(Node):
         if movie in self.movies:
             self.income -= self.movies[movie]
 
-        self.movies[movie] = movie
+        self.movies[movie] = income
         self.income += income
 
 
 class MovieNode(Node):
-    income = None
-    actors = {}
-
     def __init__(self, name, income, actors=None):
         """
         Create a node to hold value for a movie
@@ -70,10 +65,11 @@ class MovieNode(Node):
         """
         super(MovieNode, self).__init__()
 
-        self.name = name
         if income is None:
             raise ValueError("Income cannot be None")
+        self.name = name
         self.income = income
+        self.actors = {}
         if actors is not None:
             self.set_actors(actors)
 

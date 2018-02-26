@@ -1,10 +1,16 @@
 from .node import ActorNode, MovieNode
 from ..crawler import ActorItem, MovieItem
+import jsonpickle
 
 
 class Graph:
-    movies = {}
-    actors = {}
+    def __init__(self):
+        """
+        Initialize the graph with two kinds of nodes
+        """
+        self.movies = {}
+        self.actors = {}
+        
 
     def add(self, item):
         """
@@ -41,6 +47,8 @@ class Graph:
         movie_node = MovieNode(movie_item["name"], movie_item["income"], movie_item["actors"])
         self.movies[url] = movie_node
 
-        # link movie to actors
         for actor in movie_node.actors:
+            if actor not in self.actors:  # create the actor for the movie
+                self.actors[actor] = ActorNode()
+            # link movie to actors
             self.actors[actor].add_movie(url, movie_node.get_actor_income(actor))
