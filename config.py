@@ -1,6 +1,7 @@
 # starting task
 START_URL = "/wiki/Morgan_Freeman"
 START_IS_MOVIE = False
+START_IS_FILMOGRAPHY = False
 
 # delay between each request
 DELAY = 0.25

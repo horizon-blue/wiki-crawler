@@ -35,7 +35,8 @@ class Spider(ScrapySpider):
         "CLOSESPIDER_TIMEOUT": config.CLOSE_TIMEOUT,
     }
 
-    def __init__(self, start_task=(ROOT + config.START_URL, config.START_IS_MOVIE), *args, **kwargs):
+    def __init__(self, start_task=(ROOT + config.START_URL, config.START_IS_MOVIE, config.START_IS_FILMOGRAPHY), *args,
+                 **kwargs):
         """
         Initialize a movie crawler
         :param start_task: the first page to start crawling. this should be a (url, is_movie)
@@ -55,8 +56,8 @@ class Spider(ScrapySpider):
         :return: iterable for each task
         """
         for task in self.start_tasks:
-            url, is_movie = task
-            yield Request(url, meta={'is_movie': is_movie})
+            url, is_movie, is_filmography = task
+            yield Request(url, meta={'is_movie': is_movie, 'is_filmography': is_filmography})
 
     def parse(self, response):
         """
@@ -66,6 +67,8 @@ class Spider(ScrapySpider):
         """
         if response.meta["is_movie"]:
             yield from self.parse_movie(response)
+        elif response.meta["is_filmography"]:
+            yield from self.parse_filmography(response)
         else:
             yield from self.parse_actor(response)
 
@@ -85,9 +88,11 @@ class Spider(ScrapySpider):
             # strip off root url
             link = response.request.url[len(ROOT):]
 
-            movies = self.get_movies(soup)
+            movies, filmographies = self.get_movies(soup)
             for movie_url in movies:
-                yield Request(ROOT + movie_url, meta={'is_movie': True})
+                yield Request(ROOT + movie_url, meta={'is_movie': True, 'is_filmography': False})
+            for filmography in filmographies:
+                yield Request(ROOT + filmography, meta={'is_movie': False, 'is_filmography': True})
 
             # return the final parsed object
             yield ActorItem(name=name, age=age, url=link)
@@ -114,9 +119,21 @@ class Spider(ScrapySpider):
             # generate new requests if there is income information
             if income is not None:
                 for actor in starring:
-                    yield Request(ROOT + actor, meta={'is_movie': False})
+                    yield Request(ROOT + actor, meta={'is_movie': False, 'is_filmography': False})
         except AttributeError:
             yield {}
+
+    def parse_filmography(self, response):
+        """
+        Parse the filmography page from response
+        :param response: the response page
+        :return: parsed Requests
+        """
+        urls = BeautifulSoup(response.text, 'lxml').find_all("a")
+        for url in urls:
+            if url.has_attr('href'):
+                # fetch each movies
+                yield Request(ROOT + url["href"], meta={'is_movie': True})
 
     def get_movies(self, soup):
         """
@@ -125,6 +142,7 @@ class Spider(ScrapySpider):
         :return: a list of movies
         """
         movies = []
+        filmographies = []
         filmography = soup.find("span", id="Filmography").find_parent("h2").find_next_sibling()
         stop_token = "h2"
 
@@ -135,11 +153,16 @@ class Spider(ScrapySpider):
                 stop_token = "h3"
             urls = filmography.find_all("a")
             for url in urls:
-                movies.append(url["href"])
+                href = url["href"]
+                # goes to filmography page instead
+                if href.endswith("filmography"):
+                    filmographies.append(href)
+                else:
+                    movies.append(href)
 
             filmography = filmography.find_next_sibling()
 
-        return movies
+        return movies, filmographies
 
     def get_age(self, info_box):
         """
