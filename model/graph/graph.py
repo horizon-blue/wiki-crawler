@@ -15,6 +15,9 @@ class Graph:
         self.movies = {}
         self.actors = {}
 
+        # dictionary to store the url for given name
+        self.urls = {}
+
         # dictionary for unreached actors
         self.unreached_actors = {}
 
@@ -27,6 +30,8 @@ class Graph:
             self.add_actor(item)
         elif isinstance(item, MovieItem):
             self.add_movie(item)
+
+        self.urls[item["name"]] = item["url"]
 
     def add_actor(self, actor_item):
         """
@@ -91,3 +96,100 @@ class Graph:
 
         with open(filename, "w") as file:
             file.write(jsonpickle.encode(self))
+
+    def get_movie(self, movie):
+        """
+        Query to get the movie node object based on its name or url
+        :param movie: name or url of the movie
+        :return: MovieNode, or None if no data is found
+        """
+        if movie in self.movies:
+            return self.movies[movie]
+        elif movie in self.urls:
+            return self.movies[self.urls[movie]]
+        else:
+            return None
+
+    def get_actor(self, actor):
+        """
+        Query to get the actor node object based on its name or url
+        :param actor: name or url of the actor
+        :return: ActorNode, or None if no data is found
+        """
+        if actor in self.actors:
+            return self.movies[actor]
+        elif actor in self.urls:
+            return self.actors[self.urls[actor]]
+        else:
+            return None
+
+    def get_gross_income(self, movie):
+        """
+        Query to get the gross income given a movie url
+        :param movie: the name or url of the movie
+        :return: gross income of a movie, or None if no data is found
+        """
+        movie_node = self.get_movie(movie)
+        if movie_node is not None:
+            return movie_node.income
+
+    def get_movies(self, actor):
+        """
+        Query to get the list of movies the given actor has worked in
+        :param actor: the name or url of the actor
+        :return: list of the movies that the actor is in, or None if no data is found
+        """
+        actor_node = self.get_actor(actor)
+        if actor_node is not None:
+            return [self.movies[movie] for movie in actor_node.movies]
+
+    def get_actors(self, movie):
+        """
+        Query to get the list of actors the given movie has
+        :param movie: the name or url of the movie
+        :return: list of the actors that the movie has, or None if no data is found
+        """
+        movie_node = self.get_movie(movie)
+        if movie_node is not None:
+            return [self.actors[actor] for actor in movie_node.actors if actor in self.actors]
+
+    def get_actor_rank(self, n=10):
+        """
+        Get the top n actors with highest gross income
+        :param n: the number of actors to get, or negative int to get all actors
+        :return: a List containing n actor object. The returning list might be shorter
+        than n if the total number of actors is smaller than n
+        """
+        return sorted(self.actors.values(), key=lambda actor: actor.income, reverse=True)[:n]
+
+    def get_oldest_actors(self, n=10):
+        """
+        Get the oldest n actors
+        :param n: the number of actors to get, or negative int to get all actors
+        :return: a List containing n actor object. The returning list might be shorter
+        than n if the total number of actors is smaller than n
+        """
+        return sorted(self.actors.values(), key=lambda actor: actor.age, reverse=True)[:n]
+
+    def get_movies_by_year(self, year):
+        """
+        Query to get all movies in a specified year
+        :param year: the year to lookup
+        :return: a list of MovieNode in a given year
+        """
+        return [movie for movie in self.movies.values()
+                if movie.release_date is not None and movie.release_date.year == year]
+
+    def get_actors_by_year(self, year):
+        """
+        Query to get all actors in a specified year
+        :param year: the year to lookup
+        :return: a list of ActorNode in a given year
+        """
+        movies = self.get_movies_by_year(year)
+        actors = set()
+        for movie in movies:
+            for actor in movie.actors:
+                if actor in self.actors:
+                    actors.add(self.actors[actor])
+        return list(actors)
