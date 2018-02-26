@@ -61,7 +61,7 @@ class Spider(ScrapySpider):
 
             name = soup.find(id="firstHeading").text
 
-            info_box = soup.find("table", attrs={"class": "infobox vevent"})
+            info_box = soup.find("table", attrs={"class": "infobox"})
             age = self.get_age(info_box)
             # strip off root url
             link = response.request.url[len(ROOT):]
@@ -87,7 +87,7 @@ class Spider(ScrapySpider):
             name = soup.find(id="firstHeading").text
             # strip off root url
             link = response.request.url[len(ROOT):]
-            info_box = soup.find("table", attrs={"class": "infobox vevent"})
+            info_box = soup.find("table", attrs={"class": "infobox"})
             income = self.get_income(info_box)
             starring = self.get_starring(info_box)
             yield MovieItem(name=name, income=income, url=link, actors=starring)
@@ -114,9 +114,8 @@ class Spider(ScrapySpider):
                 # the actor is dead.. need to find the death information
                 age = soup.find("span", attrs={"class": "dday deathdate"}) \
                     .find_parent().find_next_sibling().previous_element
-
             # gather all digits in age description (age xxx) or (aged xxx)
-            return int(re.search(r"aged? (\d+)", age).group(1))
+            return int(re.search(r"aged?\D*(\d+)", age).group(1))
 
         except AttributeError:
             # cannot parse the age

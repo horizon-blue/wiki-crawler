@@ -71,6 +71,8 @@ class MovieNode(Node):
         super(MovieNode, self).__init__()
 
         self.name = name
+        if income is None:
+            raise ValueError("Income cannot be None")
         self.income = income
         if actors is not None:
             self.set_actors(actors)
@@ -87,3 +89,14 @@ class MovieNode(Node):
         for index, actor in enumerate(actors):
             n = index + 1
             self.actors[actor] = self.income * 2 * (m + 1 - n) / (m * (m + 1))
+
+    def get_actor_income(self, actor):
+        """
+        Helper function to get the income a specific actor received from a movie
+        :param actor: the actor to look up
+        :return: income an actor received from a movie
+        """
+        if actor in self.actors:
+            return self.actors[actor]
+        else:
+            return 0

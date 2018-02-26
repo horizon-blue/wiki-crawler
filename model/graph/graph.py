@@ -33,11 +33,14 @@ class Graph:
         """
         Create movie vertex for the given movie, and update all actors associate with
         the movie
-        :param movie_item:
-        :return:
+        :param movie_item: the movie item to add
         """
         url = movie_item["url"]
         if url in self.movies:  # do nothing if move exists
             return
         movie_node = MovieNode(movie_item["name"], movie_item["income"], movie_item["actors"])
         self.movies[url] = movie_node
+
+        # link movie to actors
+        for actor in movie_node.actors:
+            self.actors[actor].add_movie(url, movie_node.get_actor_income(actor))
