@@ -55,4 +55,4 @@ venv/
 *.pyc
 
 # json output
-output/
+**/output/

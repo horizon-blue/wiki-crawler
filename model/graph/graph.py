@@ -31,8 +31,6 @@ class Graph:
         elif isinstance(item, MovieItem):
             self.add_movie(item)
 
-        self.urls[item["name"]] = item["url"]
-
     def add_actor(self, actor_item):
         """
         Create an actor vertex for the given vector, or merge to existing one
@@ -51,6 +49,8 @@ class Graph:
             self.actors[url] = actor
         else:
             self.actors[url] = actor_node
+
+        self.urls[actor_item["name"]] = actor_item["url"]
 
     def add_movie(self, movie_item):
         """
@@ -73,6 +73,8 @@ class Graph:
                 actor_node = self.actors[actor]
             # link movie to actors
             actor_node.add_movie(url, movie_node.get_actor_income(actor))
+
+        self.urls[movie_item["name"]] = movie_item["url"]
 
     @classmethod
     def load(cls, filename):
@@ -117,7 +119,7 @@ class Graph:
         :return: ActorNode, or None if no data is found
         """
         if actor in self.actors:
-            return self.movies[actor]
+            return self.actors[actor]
         elif actor in self.urls:
             return self.actors[self.urls[actor]]
         else:
