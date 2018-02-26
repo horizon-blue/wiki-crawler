@@ -20,6 +20,9 @@ class Spider(ScrapySpider):
             "scrapy.downloadermiddlewares.useragent.UserAgentMiddleware": None,
             "scrapy_fake_useragent.middleware.RandomUserAgentMiddleware": 400,
         },
+        "ITEM_PIPELINES": {
+            "model.crawler.pipeline.GraphPipeline": 300,
+        },
         "DOWNLOAD_DELAY": 1,
     }
 

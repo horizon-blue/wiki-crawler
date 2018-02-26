@@ -3,31 +3,58 @@ from abc import ABC, abstractmethod
 
 class Node(ABC):
     name = None
-    url = None
 
-    def __eq__(self, other):
-        """
-        check equality of two nodes. two nodes are considered equal if
-        and only their url are equal
-        In addition, a string is equal to the node if it is the same as the node's url
-        :param other: the other node to compare
-        :return: true if the two nodes have the same url, false otherwise
-        """
-        if isinstance(other, str):
-            return self.url == other
-        return isinstance(other, self.__class__) and self.url == other.url
+    @abstractmethod
+    def __init__(self):
+        ...
 
-    def __hash__(self):
-        """
-        node with same url should have same hash
-        :return: hash that uniquely identify the node
-        """
-        return hash(self.url)
+    def __str__(self):
+        return self.name
 
 
 class ActorNode(Node):
     age = None
+    movies = {}
+
+    def __init__(self, name, age):
+        """
+        Create a node to hold value for an actor
+        :param name: name of the actor
+        :param age: age of the actor
+        """
+        super(ActorNode, self).__init__()
+
+        self.name = name
+        self.age = age
 
 
 class MovieNode(Node):
-    pass
+    income = None
+    actors = {}
+
+    def __init__(self, name, income, actors=None):
+        """
+        Create a node to hold value for a movie
+        :param name: name of the movie
+        :param income: gross income of the movie
+        :param actors: list of actors, in the same order as they appears in wikipedia
+        """
+        super(MovieNode, self).__init__()
+
+        self.name = name
+        self.income = income
+        if actors is not None:
+            self.set_actors(actors)
+
+    def set_actors(self, actors):
+        """
+        set the list of actors (url) for the movie and calculate the income for each of
+        the actor. Assume that the n-th actor in the list have
+        2 * (m + 1 - n) / (m * (m + 1)) of the movies gross income, where m = len(actors)
+        :param actors: list of actors, in the same order as they appears in wikipedia
+        :return: None
+        """
+        m = len(actors)
+        for index, actor in enumerate(actors):
+            n = index + 1
+            self.actors[actor] = 2 * (m + 1 - n) / (m * (m + 1))
