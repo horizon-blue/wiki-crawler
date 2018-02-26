@@ -1,6 +1,6 @@
 from scrapy.exceptions import DropItem
 from ..graph import Graph
-from .config import JSON_OUTPUT_FILE
+from config import JSON_OUTPUT_FILE
 
 
 class GraphPipeline:

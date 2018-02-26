@@ -3,8 +3,7 @@ from scrapy import Spider as ScrapySpider, Request
 from bs4 import BeautifulSoup
 from dateparser import parse as parse_date
 from .item import MovieItem, ActorItem
-from . import config
-
+import config
 
 ROOT = "https://en.wikipedia.org"
 
