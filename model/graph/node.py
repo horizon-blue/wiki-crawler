@@ -11,8 +11,12 @@ class Node(ABC):
     def __init__(self):
         ...
 
-    def __str__(self):
-        return self.name
+    def __repr__(self):
+        """
+        Representation of the node
+        :return: a string representation of the node
+        """
+        return '<{} "{}">'.format(self.__class__.__name__, self.name)
 
 
 class ActorNode(Node):
