@@ -1,7 +1,6 @@
 from scrapy.exceptions import DropItem
 from ..graph import Graph
-
-JSON_OUTPUT_FILE = "output/out.json"
+from .config import JSON_OUTPUT_FILE
 
 
 class GraphPipeline:
@@ -15,7 +14,8 @@ class GraphPipeline:
         Close the file object as the spider ends crawling
         :param _: reference to the spider object (unused)
         """
-        self.graph.dump(JSON_OUTPUT_FILE)
+        if JSON_OUTPUT_FILE is not None:
+            self.graph.dump(JSON_OUTPUT_FILE)
 
     def process_item(self, item, _):
         """
@@ -26,7 +26,6 @@ class GraphPipeline:
         """
         try:
             self.graph.add(item)
-            print("Movies: %d, Actors: %d" % self.graph.get_counts())
             return item
         except (KeyError, ValueError):
             raise DropItem("Incomplete info in %s" % item)

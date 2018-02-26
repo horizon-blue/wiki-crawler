@@ -3,10 +3,10 @@ from scrapy import Spider as ScrapySpider, Request
 from bs4 import BeautifulSoup
 from dateparser import parse as parse_date
 from .item import MovieItem, ActorItem
+from . import config
+
 
 ROOT = "https://en.wikipedia.org"
-DEFAULT_START_URL = ROOT + "/wiki/Morgan_Freeman"
-DEFAULT_IS_MOVIE = False
 
 
 class Spider(ScrapySpider):
@@ -30,12 +30,12 @@ class Spider(ScrapySpider):
         "EXTENSIONS": {
             "scrapy.extensions.closespider.CloseSpider": 1,
         },
-        "DOWNLOAD_DELAY": 0.25,
-        "CLOSESPIDER_ITEMCOUNT": 0,
-        "CLOSESPIDER_TIMEOUT": 600,  # allow crawler to run for 10 minutes
+        "DOWNLOAD_DELAY": config.DELAY,
+        "CLOSESPIDER_ITEMCOUNT": config.CLOSE_ITEM_COUNT,
+        "CLOSESPIDER_TIMEOUT": config.CLOSE_TIMEOUT,
     }
 
-    def __init__(self, start_task=(DEFAULT_START_URL, DEFAULT_IS_MOVIE), *args, **kwargs):
+    def __init__(self, start_task=(ROOT + config.START_URL, config.START_IS_MOVIE), *args, **kwargs):
         """
         Initialize a movie crawler
         :param start_task: the first page to start crawling. this should be a (url, is_movie)
