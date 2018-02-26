@@ -158,20 +158,26 @@ class Graph:
     def get_actor_rank(self, n=10):
         """
         Get the top n actors with highest gross income
-        :param n: the number of actors to get, or negative int to get all actors
+        :param n: the number of actors to get, or non-positive int to get all actors
         :return: a List containing n actor object. The returning list might be shorter
         than n if the total number of actors is smaller than n
         """
-        return sorted(self.actors.values(), key=lambda actor: actor.income, reverse=True)[:n]
+        actor_rank = sorted(self.actors.values(), key=lambda actor: actor.income, reverse=True)
+        if n > 0:
+            return actor_rank[:n]
+        return actor_rank
 
     def get_oldest_actors(self, n=10):
         """
         Get the oldest n actors
-        :param n: the number of actors to get, or negative int to get all actors
+        :param n: the number of actors to get, or non-positive int to get all actors
         :return: a List containing n actor object. The returning list might be shorter
         than n if the total number of actors is smaller than n
         """
-        return sorted(self.actors.values(), key=lambda actor: actor.age, reverse=True)[:n]
+        actor_rank = sorted(self.actors.values(), key=lambda actor: actor.age, reverse=True)
+        if n > 0:
+            return actor_rank[:n]
+        return actor_rank
 
     def get_movies_by_year(self, year):
         """

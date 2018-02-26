@@ -80,7 +80,7 @@ class MovieNode(Node):
         super(MovieNode, self).__init__()
 
         if not actors or income is None:
-            raise ValueError("missing important values")
+            raise ValueError("missing actors or income information")
         self.name = name
         self.income = income
         self.release_date = release_date
