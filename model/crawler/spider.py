@@ -27,7 +27,12 @@ class Spider(ScrapySpider):
         "ITEM_PIPELINES": {
             "model.crawler.pipeline.GraphPipeline": 300,
         },
-        "DOWNLOAD_DELAY": 1,
+        "EXTENSIONS": {
+            "scrapy.extensions.closespider.CloseSpider": 1,
+        },
+        "DOWNLOAD_DELAY": 0.25,
+        "CLOSESPIDER_ITEMCOUNT": 0,
+        "CLOSESPIDER_TIMEOUT": 600,  # allow crawler to run for 10 minutes
     }
 
     def __init__(self, start_task=(DEFAULT_START_URL, DEFAULT_IS_MOVIE), *args, **kwargs):
@@ -73,23 +78,17 @@ class Spider(ScrapySpider):
         try:
             soup = BeautifulSoup(response.text, 'lxml')
 
-            name = soup.find(id="firstHeading").text
+            name = re.sub(r"\(.*\)", "", soup.find(id="firstHeading").text).strip()
 
             info_box = soup.find("table", attrs={"class": "infobox"})
             age = self.get_age(info_box)
             # strip off root url
             link = response.request.url[len(ROOT):]
 
-            # get all links before next h2 tag
-            filmography = soup.find("span", id="Filmography").find_parent("h2").find_next_sibling()
+            movies = self.get_movies(soup)
+            for movie_url in movies:
+                yield Request(ROOT + movie_url, meta={'is_movie': True})
 
-            while filmography.name != "h2":
-                urls = filmography.find_all("a")
-                for url in urls:
-                    href = url["href"]
-                    # scrapy filters duplicated urls on default
-                    yield Request(ROOT + href, meta={'is_movie': True})
-                filmography = filmography.find_next_sibling()
             # return the final parsed object
             yield ActorItem(name=name, age=age, url=link)
         except AttributeError:
@@ -103,7 +102,7 @@ class Spider(ScrapySpider):
         """
         try:
             soup = BeautifulSoup(response.text, 'lxml')
-            name = soup.find(id="firstHeading").text
+            name = re.sub(r"\(.*\)", "", soup.find(id="firstHeading").text).strip()
             # strip off root url
             link = response.request.url[len(ROOT):]
             info_box = soup.find("table", attrs={"class": "infobox"})
@@ -112,11 +111,35 @@ class Spider(ScrapySpider):
             release_date = self.get_release_date(info_box)
             yield MovieItem(name=name, income=income, url=link, actors=starring, release_date=release_date)
 
-            # generate new requests
-            for actor in starring:
-                yield Request(ROOT + actor, meta={'is_movie': False})
+            # generate new requests if there is income information
+            if income is not None:
+                for actor in starring:
+                    yield Request(ROOT + actor, meta={'is_movie': False})
         except AttributeError:
             yield {}
+
+    def get_movies(self, soup):
+        """
+        A helper method to get the url to movies from soup
+        :param soup: the beautiful soup object
+        :return: a list of movies
+        """
+        movies = []
+        filmography = soup.find("span", id="Filmography").find_parent("h2").find_next_sibling()
+        stop_token = "h2"
+
+        while filmography.name != stop_token:  # stop at next h2
+            # if contains film subsection, then read directly from there
+            films = filmography.find(id="Film")
+            if filmography.name == "h3" and films is not None:
+                stop_token = "h3"
+            urls = filmography.find_all("a")
+            for url in urls:
+                movies.append(url["href"])
+
+            filmography = filmography.find_next_sibling()
+
+        return movies
 
     def get_age(self, info_box):
         """

@@ -26,6 +26,7 @@ class GraphPipeline:
         """
         try:
             self.graph.add(item)
+            print("Movies: %d, Actors: %d" % self.graph.get_counts())
             return item
         except (KeyError, ValueError):
             raise DropItem("Incomplete info in %s" % item)

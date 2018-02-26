@@ -193,3 +193,10 @@ class Graph:
                 if actor in self.actors:
                     actors.add(self.actors[actor])
         return list(actors)
+
+    def get_counts(self):
+        """
+        Get the number of movies and actors crawled
+        :return: (movie_count, actor_count) tuple
+        """
+        return len(self.movies), len(self.actors)
