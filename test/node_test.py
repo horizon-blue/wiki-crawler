@@ -14,10 +14,10 @@ class TestGraph(TestCase):
 
     def test_add_movie_for_actor(self):
         self.actor_node.add_movie("a", 123)
-        self.assertAlmostEqual(self.actor_node.income, 123)
+        self.assertAlmostEqual(self.actor_node.total_gross, 123)
         # replace previous movie
         self.actor_node.add_movie("a", 234)
-        self.assertAlmostEqual(self.actor_node.income, 234)
+        self.assertAlmostEqual(self.actor_node.total_gross, 234)
 
     @classmethod
     def setup_raise_except(cls):

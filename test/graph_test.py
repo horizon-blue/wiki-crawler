@@ -67,12 +67,12 @@ class TestGraph(TestCase):
 
     def test_get_gross_income(self):
         self.graph.add(self.movie_item)
-        self.assertEqual(self.movie_item["income"], self.graph.get_gross_income("x"))
+        self.assertEqual(self.movie_item["income"], self.graph.get_box_office("x"))
         # check gross income for each actor equals to the income of movie
         total_income = 0
         for actor_income in self.graph.movies["y"].actors.values():
             total_income += actor_income
-        self.assertAlmostEqual(total_income, self.graph.get_gross_income("y"))
+        self.assertAlmostEqual(total_income, self.graph.get_box_office("y"))
 
     def test_get_movies(self):
         self.graph.add(self.movie_item)

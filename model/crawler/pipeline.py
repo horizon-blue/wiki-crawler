@@ -10,6 +10,19 @@ class GraphPipeline:
     """
     graph = Graph()
 
+    def open_spider(self, _):
+        """
+        Try to the graph (if any) when spider opens
+        :param _: reference to the spider object (unused)
+        """
+        if JSON_OUTPUT_FILE is not None:
+            try:
+                self.graph = Graph.load(JSON_OUTPUT_FILE)
+                if not isinstance(self.graph, Graph):
+                    self.graph = Graph()
+            except FileNotFoundError:
+                pass
+
     def close_spider(self, _):
         """
         Close the file object as the spider ends crawling

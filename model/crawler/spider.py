@@ -14,7 +14,7 @@ class Spider(ScrapySpider):
     """
     name = "spider"
     allowed_domains = ["en.wikipedia.org"]
-    start_tasks = []
+    start_tasks = [(ROOT + config.START_URL, config.START_IS_MOVIE, config.START_IS_FILMOGRAPHY)]
 
     custom_settings = {
         # using fake user-agent
@@ -40,20 +40,6 @@ class Spider(ScrapySpider):
         # directory to store paused spider
         "JOBDIR": config.JOBDIR,
     }
-
-    def __init__(self, start_task=(ROOT + config.START_URL, config.START_IS_MOVIE, config.START_IS_FILMOGRAPHY), *args,
-                 **kwargs):
-        """
-        Initialize a movie crawler
-        :param start_task: the first page to start crawling. this should be a (url, is_movie)
-        pair, where url is a string indicating the first page to crawl and is_movie indicates
-        whether the first page is movie page or not
-        :param args: other arguments to pass into the super class
-        :param kwargs: other arguments to pass into the super class
-        """
-        super(Spider, self).__init__(*args, **kwargs)
-
-        self.start_tasks.append(start_task)
 
     def start_requests(self):
         """
@@ -88,10 +74,10 @@ class Spider(ScrapySpider):
             soup, name, link, info_box = self.parse_basic_info(response)
             age = self.get_age(info_box)
 
-            movies, filmographies = self.get_movies(soup)
+            movies, filmography_list = self.get_movies(soup)
             for movie_url in movies:
                 yield Request(ROOT + movie_url, meta={'is_movie': True, 'is_filmography': False})
-            for filmography in filmographies:
+            for filmography in filmography_list:
                 yield Request(ROOT + filmography, meta={'is_movie': False, 'is_filmography': True})
 
             # return the final parsed object
@@ -150,7 +136,7 @@ class Spider(ScrapySpider):
         :return: a list of movies
         """
         movies = []
-        filmographies = []
+        filmography_list = []
         filmography = soup.find("span", id="Filmography").find_parent("h2").find_next_sibling()
         stop_token = "h2"
 
@@ -164,13 +150,13 @@ class Spider(ScrapySpider):
                 href = url["href"]
                 # goes to filmography page instead
                 if href.endswith("filmography"):
-                    filmographies.append(href)
+                    filmography_list.append(href)
                 else:
                     movies.append(href)
 
             filmography = filmography.find_next_sibling()
 
-        return movies, filmographies
+        return movies, filmography_list
 
     def get_age(self, info_box):
         """
@@ -216,7 +202,7 @@ class Spider(ScrapySpider):
         """
         try:
             starring = info_box.find(text="Starring").find_parent("tr")
-            return [url["href"] for url in starring.find_all("a")]
+            return [url["href"] for url in starring.find_all("a").rsplit('/')[-1]]
         except AttributeError:
             return []
 

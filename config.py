@@ -16,4 +16,4 @@ CLOSE_ITEM_COUNT = 0
 JSON_OUTPUT_FILE = "output/out.json"
 
 # place to stored paused file
-JOBDIR = "jobdir/spider"
+JOBDIR = "jobdir"

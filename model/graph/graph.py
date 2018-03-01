@@ -84,7 +84,11 @@ class Graph:
         :return: the graph loaded
         """
         with open(filename) as file:
-            return jsonpickle.decode(file.read())
+            decoded = jsonpickle.decode(file.read())
+            if isinstance(decoded, Graph):
+                return decoded
+            elif isinstance(decoded, list) and len(decoded) == 2:
+                actors, movies = decoded
 
     def dump(self, filename):
         """
@@ -94,7 +98,9 @@ class Graph:
         """
         # creates the directory if none exists
         # source: https://stackoverflow.com/questions/12517451/automatically-creating-directories-with-file-output
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        dirname = os.path.dirname(filename)
+        if dirname != '':
+            os.makedirs(dirname, exist_ok=True)
 
         with open(filename, "w") as file:
             file.write(jsonpickle.encode(self))
@@ -125,7 +131,7 @@ class Graph:
         else:
             return None
 
-    def get_gross_income(self, movie):
+    def get_box_office(self, movie):
         """
         Query to get the gross income given a movie url
         :param movie: the name or url of the movie
@@ -133,7 +139,7 @@ class Graph:
         """
         movie_node = self.get_movie(movie)
         if movie_node is not None:
-            return movie_node.income
+            return movie_node.box_office
 
     def get_movies(self, actor):
         """
@@ -162,7 +168,7 @@ class Graph:
         :return: a List containing n actor object. The returning list might be shorter
         than n if the total number of actors is smaller than n
         """
-        actor_rank = sorted(self.actors.values(), key=lambda actor: actor.income, reverse=True)
+        actor_rank = sorted(self.actors.values(), key=lambda actor: actor.total_gross, reverse=True)
         if n > 0:
             return actor_rank[:n]
         return actor_rank

@@ -6,6 +6,7 @@ class Node(ABC):
     The abstract Node class for vertices in graph
     """
     name = None
+    wiki_page = None
 
     @abstractmethod
     def __init__(self):
@@ -33,7 +34,7 @@ class ActorNode(Node):
 
         self.name = name
         self.age = age
-        self.income = 0
+        self.total_gross = 0
         self.movies = {}
 
     def update(self, other):
@@ -47,9 +48,9 @@ class ActorNode(Node):
         self.name = other.name
         self.movies.update(other.movies)
         # re-calculate the income
-        self.income = 0
+        self.total_gross = 0
         for movie in self.movies:
-            self.income += self.movies[movie]
+            self.total_gross += self.movies[movie]
 
     def add_movie(self, movie, income):
         """
@@ -59,10 +60,10 @@ class ActorNode(Node):
         """
         # overwrite existed value
         if movie in self.movies:
-            self.income -= self.movies[movie]
+            self.total_gross -= self.movies[movie]
 
         self.movies[movie] = income
-        self.income += income
+        self.total_gross += income
 
 
 class MovieNode(Node):
@@ -70,19 +71,20 @@ class MovieNode(Node):
     The subclass used to store movie information
     """
 
-    def __init__(self, name, income, release_date, actors):
+    def __init__(self, name, box_office, release_date, actors):
         """
         Create a node to hold value for a movie
         :param name: name of the movie
-        :param income: gross income of the movie
+        :param box_office: gross income of the movie
+        :param release_date: the datetime indicates the release date of the movie
         :param actors: list of actors, in the same order as they appears in wikipedia
         """
         super(MovieNode, self).__init__()
 
-        if not actors or income is None:
+        if not actors or box_office is None:
             raise ValueError("missing actors or income information")
         self.name = name
-        self.income = income
+        self.box_office = box_office
         self.release_date = release_date
         self.actors = {}
         self.set_actors(actors)
@@ -98,7 +100,7 @@ class MovieNode(Node):
         m = len(actors)
         for index, actor in enumerate(actors):
             n = index + 1
-            self.actors[actor] = self.income * 2 * (m + 1 - n) / (m * (m + 1))
+            self.actors[actor] = self.box_office * 2 * (m + 1 - n) / (m * (m + 1))
 
     def get_actor_income(self, actor):
         """
