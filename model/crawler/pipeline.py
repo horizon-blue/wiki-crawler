@@ -1,6 +1,7 @@
 from scrapy.exceptions import DropItem
 from ..graph import Graph
-from config import JSON_OUTPUT_FILE
+from .item import MovieItem
+from config import JSON_OUTPUT_FILE, RESUME
 import logging
 
 
@@ -15,7 +16,7 @@ class GraphPipeline:
         Try to the graph (if any) when spider opens
         :param _: reference to the spider object (unused)
         """
-        if JSON_OUTPUT_FILE is not None:
+        if RESUME and JSON_OUTPUT_FILE is not None:
             try:
                 self.graph = Graph.load(JSON_OUTPUT_FILE)
                 if not isinstance(self.graph, Graph):
@@ -39,7 +40,11 @@ class GraphPipeline:
         :return: the item for used in later pipeline
         """
         try:
+            if isinstance(item, MovieItem):
+                if item.get("box_office") is None or not item.get("actors"):
+                    raise ValueError("missing actors or income information")
             self.graph.add(item)
+
             count = self.graph.get_counts()
             # logging
             logging.info(

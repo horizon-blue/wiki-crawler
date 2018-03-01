@@ -18,9 +18,6 @@ class Graph:
         # dictionary to store the url for given name
         self.urls = {}
 
-        # dictionary for unreached actors
-        self.unreached_actors = {}
-
     def add(self, item):
         """
         Add the item to the graph based on its type
@@ -31,50 +28,52 @@ class Graph:
         elif isinstance(item, MovieItem):
             self.add_movie(item)
 
-    def add_actor(self, actor_item):
+    def add_url_map(self, name, url):
+        """
+        Helper function to associate name with url
+        :param name: name of the node
+        :param url: url of the node
+        """
+        self.urls[name] = url
+
+    def add_actor(self, actor_item, url=""):
         """
         Create an actor vertex for the given vector, or merge to existing one
         :param actor_item: the ActorItem for the given actor
+        :param url: a replacement url if url is no present in actor_item
         """
-        actor_node = ActorNode(actor_item["name"], actor_item["age"])
-        url = actor_item["url"]
+        actor_node = ActorNode(actor_item)
+        url = actor_item.get("wiki_page", url)
 
-        if url in self.unreached_actors:  # actor is already created by movie
-            # remove actor from unreached dict
-            actor = self.unreached_actors[url]
-            self.unreached_actors.pop(url)
-
-            actor.update(actor_node)
-
-            self.actors[url] = actor
+        if url in self.actors:  # actor is already created by movie
+            self.actors[url].update(actor_node)
         else:
             self.actors[url] = actor_node
 
-        self.urls[actor_item["name"]] = actor_item["url"]
+        if "name" in actor_item:
+            self.add_url_map(actor_item.get("name"), url)
 
-    def add_movie(self, movie_item):
+    def add_movie(self, movie_item, url=""):
         """
         Create movie vertex for the given movie, and update all actors associate with
         the movie
         :param movie_item: the movie item to add
+        :param url: a replacement url if url is no present in movie_item
         """
-        url = movie_item["url"]
+        url = movie_item.get("wiki_page", url)
         if url in self.movies:  # do nothing if move exists
             return
-        movie_node = MovieNode(movie_item["name"], movie_item["income"], movie_item["release_date"],
-                               movie_item["actors"])
+        movie_node = MovieNode(movie_item)
         self.movies[url] = movie_node
 
         for actor in movie_node.actors:
             if actor not in self.actors:  # create the actor for the movie
-                self.unreached_actors[actor] = ActorNode()
-                actor_node = self.unreached_actors[actor]
-            else:
-                actor_node = self.actors[actor]
+                self.actors[actor] = ActorNode({"wiki_page": actor})
             # link movie to actors
-            actor_node.add_movie(url, movie_node.get_actor_income(actor))
+            self.actors[actor].add_movie(url, movie_node.get_actor_income(actor))
 
-        self.urls[movie_item["name"]] = movie_item["url"]
+        if "name" in movie_item:
+            self.add_url_map(movie_item.get("name"), url)
 
     @classmethod
     def load(cls, filename):

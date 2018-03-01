@@ -12,8 +12,13 @@ CLOSE_TIMEOUT = 0  # allow crawler to run for 10 minutes
 # number of parsed item for the spider to close itself (set to 0 to disable item count)
 CLOSE_ITEM_COUNT = 0
 
+# decide whether or not to resume from previous work
+RESUME = False
+
 # the output file to store result as json (if None then no file is dumped)
+# this will be the recover file if RESUME is True
 JSON_OUTPUT_FILE = "output/out.json"
 
 # place to stored paused file
+# this will be the recover file if RESUME is True
 JOBDIR = "jobdir"

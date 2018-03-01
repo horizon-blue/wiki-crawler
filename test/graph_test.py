@@ -23,7 +23,7 @@ class TestGraph(TestCase):
     def test_add_movie(self):
         self.graph.add(self.movie_item)
         self.assertEqual(self.graph.movies["y"].name, "x")
-        self.assertEqual(len(self.graph.unreached_actors), 3)
+        self.assertEqual(len(self.graph.actors), 3)
 
     def test_add_existed_movie(self):
         movie_item2 = MovieItem(name="xyz", url="y", income=123, actors=["a"], release_date=None)

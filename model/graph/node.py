@@ -1,4 +1,7 @@
 from abc import ABC, abstractmethod
+from datetime import datetime, MINYEAR, MAXYEAR
+
+ROOT = "https://en.wikipedia.org"
 
 
 class Node(ABC):
@@ -7,6 +10,15 @@ class Node(ABC):
     """
     name = None
     wiki_page = None
+
+    def set_wiki_page(self, url):
+        """
+        A helper function to set the wiki page
+        :param url: the link to wiki page
+        """
+        if isinstance(url, str) and url.startswith(ROOT):
+            url = url[len(ROOT):]
+        self.wiki_page = url
 
     @abstractmethod
     def __init__(self):
@@ -24,18 +36,23 @@ class ActorNode(Node):
     """
     The subclass of Node used to store actor information
     """
-    def __init__(self, name="", age=None):
+
+    def __init__(self, actor_item=None):
         """
         Create a node to hold value for an actor
-        :param name: name of the actor
-        :param age: age of the actor
+        :param actor_item: the actor item or dict of the actor
         """
         super(ActorNode, self).__init__()
 
-        self.name = name
-        self.age = age
-        self.total_gross = 0
-        self.movies = {}
+        if actor_item is None:
+            actor_item = {}
+
+        self.name = actor_item.get("name")
+        self.age = actor_item.get("age")
+        self.total_gross = actor_item.get("total_gross", 0)
+        self.set_wiki_page(actor_item.get("wiki_page"))
+
+        self.movies = dict((movie, 0) for movie in actor_item.get("movies", []))
 
     def update(self, other):
         """
@@ -71,23 +88,27 @@ class MovieNode(Node):
     The subclass used to store movie information
     """
 
-    def __init__(self, name, box_office, release_date, actors):
+    def __init__(self, movie_item):
         """
         Create a node to hold value for a movie
-        :param name: name of the movie
-        :param box_office: gross income of the movie
-        :param release_date: the datetime indicates the release date of the movie
-        :param actors: list of actors, in the same order as they appears in wikipedia
+        :param movie_item: the MovieItem object or dict of the movie
         """
         super(MovieNode, self).__init__()
 
-        if not actors or box_office is None:
-            raise ValueError("missing actors or income information")
-        self.name = name
-        self.box_office = box_office
-        self.release_date = release_date
+        self.name = movie_item.get("name")
+        self.box_office = movie_item.get("box_office", 0)
+        self.set_wiki_page(movie_item.get("wiki_page"))
+
+        self.release_date = movie_item.get("release_date")
+
+        # setup release date
+        if self.release_date is None and "year" in movie_item:
+            year = movie_item.get("year")
+            if MINYEAR <= year <= MAXYEAR:
+                self.release_date = datetime(year, 1, 1)
+
         self.actors = {}
-        self.set_actors(actors)
+        self.set_actors(movie_item.get("actors", []))
 
     def set_actors(self, actors):
         """

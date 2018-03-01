@@ -6,7 +6,7 @@ class Item(ScrapyItem):
     The based scrapy item for movie and actor
     """
     name = Field()
-    url = Field()
+    wiki_page = Field()
 
 
 class ActorItem(Item):
@@ -20,6 +20,6 @@ class MovieItem(Item):
     """
         The scrapy item containing movie specific fields
         """
-    income = Field()
+    box_office = Field()
     actors = Field()
     release_date = Field()

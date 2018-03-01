@@ -38,7 +38,7 @@ class Spider(ScrapySpider):
         # delay between two consecutive request
         "DOWNLOAD_DELAY": config.DELAY,
         # directory to store paused spider
-        "JOBDIR": config.JOBDIR,
+        "JOBDIR": config.JOBDIR if config.RESUME else None,
     }
 
     def start_requests(self):
@@ -81,7 +81,7 @@ class Spider(ScrapySpider):
                 yield Request(ROOT + filmography, meta={'is_movie': False, 'is_filmography': True})
 
             # return the final parsed object
-            yield ActorItem(name=name, age=age, url=link)
+            yield ActorItem(name=name, age=age, wiki_page=link)
         except AttributeError:
             yield {}
 
@@ -93,13 +93,14 @@ class Spider(ScrapySpider):
         """
         try:
             soup, name, link, info_box = self.parse_basic_info(response)
-            income = self.get_income(info_box)
+            box_office = self.get_box_office(info_box)
             starring = self.get_starring(info_box)
             release_date = self.get_release_date(info_box)
-            yield MovieItem(name=name, income=income, url=link, actors=starring, release_date=release_date)
+            yield MovieItem(name=name, box_office=box_office, wiki_page=link, actors=starring,
+                            release_date=release_date)
 
-            # generate new requests if there is income information
-            if income is not None:
+            # generate new requests if there is box_office information
+            if box_office is not None:
                 for actor in starring:
                     yield Request(ROOT + actor, meta={'is_movie': False, 'is_filmography': False})
         except AttributeError:
@@ -112,8 +113,7 @@ class Spider(ScrapySpider):
         """
         soup = BeautifulSoup(response.text, 'lxml')
         name = re.sub(r"\(.*\)", "", soup.find(id="firstHeading").text).strip()
-        # only store the last part (the xxx in https://en.wikipedia.org/wiki/xxx)
-        link = response.request.url.rsplit('/')[-1]
+        link = response.request.url[len(ROOT):]
         info_box = soup.find("table", attrs={"class": "infobox"})
         return soup, name, link, info_box
 
@@ -181,16 +181,16 @@ class Spider(ScrapySpider):
             # cannot parse the age
             return None
 
-    def get_income(self, info_box):
+    def get_box_office(self, info_box):
         """
         A helper method to get the box office of current film
         :param info_box: the beautiful soup object for the info box
-        :return: gross income of the film, or none if cannot find anything
+        :return: gross box_office of the film, or none if cannot find anything
         """
         try:
-            income = info_box.find(text="Box office").find_parent() \
+            box_office = info_box.find(text="Box office").find_parent() \
                 .find_next_sibling().next_element
-            return self.parse_currency(income)
+            return self.parse_currency(box_office)
         except (AttributeError, TypeError):
             return None
 
@@ -202,32 +202,32 @@ class Spider(ScrapySpider):
         """
         try:
             starring = info_box.find(text="Starring").find_parent("tr")
-            return [url["href"] for url in starring.find_all("a").rsplit('/')[-1]]
+            return [url["href"] for url in starring.find_all("a")]
         except AttributeError:
             return []
 
-    def parse_currency(self, income):
+    def parse_currency(self, box_office):
         """
-        A helper method to convert string representation of income to float that
+        A helper method to convert string representation of box_office to float that
         represent the value
-        :param income: the string representation of income
-        :return: the income as float, or None if income cannot be parsed
+        :param box_office: the string representation of box_office
+        :return: the box_office as float, or None if box_office cannot be parsed
         """
         try:
             # use regular expression to remove everything in parenthesis, if any
-            income = re.sub(r"\(.*\)", "", income).strip()
+            box_office = re.sub(r"\(.*\)", "", box_office).strip()
 
             # remove currency symbol, million/billion endings and comma
-            income_value = float(income.strip("$mbtrillion").replace(',', ''))
+            box_office_value = float(box_office.strip("$mbtrillion").replace(',', ''))
 
             # augmented by the endings
-            if income.endswith("million"):
-                income_value *= 1e6
-            elif income.endswith("billion"):
-                income_value *= 1e9
-            elif income.endswith("trillion"):
-                income_value *= 1e12
-            return income_value
+            if box_office.endswith("million"):
+                box_office_value *= 1e6
+            elif box_office.endswith("billion"):
+                box_office_value *= 1e9
+            elif box_office.endswith("trillion"):
+                box_office_value *= 1e12
+            return box_office_value
 
         except ValueError:
             return None
