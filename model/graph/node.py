@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, MINYEAR, MAXYEAR
+from model.crawler import ActorItem
 
 ROOT = "https://en.wikipedia.org"
 
@@ -54,20 +55,19 @@ class ActorNode(Node):
 
         self.movies = dict((movie, 0) for movie in actor_item.get("movies", []))
 
-    def update(self, other):
+    def update(self, item):
         """
         Update current actor node using other actor node
-        :param other: the other actor node
+        :param item: the item or dict representing other actor
         """
-        if not isinstance(other, ActorNode):
+        if not (isinstance(item, ActorItem) or isinstance(item, dict)):
             return
-        self.age = other.age
-        self.name = other.name
-        self.movies.update(other.movies)
-        # re-calculate the income
-        self.total_gross = 0
-        for movie in self.movies:
-            self.total_gross += self.movies[movie]
+        self.age = item.get("age", self.age)
+        self.name = item.get("name", self.name)
+        self.total_gross = item.get("total_gross", self.total_gross)
+        self.set_wiki_page(item.get("wiki_page", self.wiki_page))
+        self.movies.update((movie, 0) for movie in item.get("movies", [])
+                           if movie not in self.movies)
 
     def add_movie(self, movie, income):
         """

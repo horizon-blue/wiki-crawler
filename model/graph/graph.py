@@ -40,17 +40,16 @@ class Graph:
         """
         Create an actor vertex for the given vector, or merge to existing one
         :param actor_item: the ActorItem for the given actor
-        :param url: a replacement url if url is no present in actor_item
+        :param url: a replacement url that overwrites the url in actor_item
         """
-        actor_node = ActorNode(actor_item)
-        url = actor_item.get("wiki_page", url)
+        url = actor_item.get("wiki_page", url) if url == "" else url
 
         if url in self.actors:  # actor is already created by movie
-            self.actors[url].update(actor_node)
+            self.actors[url].update(actor_item)
         else:
-            self.actors[url] = actor_node
+            self.actors[url] = ActorNode(actor_item)
 
-        if "name" in actor_item:
+        if "name" in actor_item and url != actor_item.get("name"):
             self.add_url_map(actor_item.get("name"), url)
 
     def add_movie(self, movie_item, url=""):
@@ -58,9 +57,9 @@ class Graph:
         Create movie vertex for the given movie, and update all actors associate with
         the movie
         :param movie_item: the movie item to add
-        :param url: a replacement url if url is no present in movie_item
+        :param url: a replacement url that overwrites the url in movie_item
         """
-        url = movie_item.get("wiki_page", url)
+        url = movie_item.get("wiki_page", url) if url == "" else url
         if url in self.movies:  # do nothing if move exists
             return
         movie_node = MovieNode(movie_item)
@@ -72,7 +71,7 @@ class Graph:
             # link movie to actors
             self.actors[actor].add_movie(url, movie_node.get_actor_income(actor))
 
-        if "name" in movie_item:
+        if "name" in movie_item and url != movie_item.get("name"):
             self.add_url_map(movie_item.get("name"), url)
 
     @classmethod
@@ -89,10 +88,10 @@ class Graph:
             elif isinstance(decoded, list) and len(decoded) == 2:
                 actors, movies = decoded
                 graph = Graph()
-                for actor_name, actor in actors.items():
-                    graph.add_actor(actor, actor_name)
                 for movie_name, movie in movies.items():
                     graph.add_movie(movie, movie_name)
+                for actor_name, actor in actors.items():
+                    graph.add_actor(actor, actor_name)
                 return graph
 
     def dump(self, filename):

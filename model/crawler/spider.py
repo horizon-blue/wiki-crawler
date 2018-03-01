@@ -147,12 +147,13 @@ class Spider(ScrapySpider):
                 stop_token = "h3"
             urls = filmography.find_all("a")
             for url in urls:
-                href = url["href"]
-                # goes to filmography page instead
-                if href.endswith("filmography"):
-                    filmography_list.append(href)
-                else:
-                    movies.append(href)
+                if url.has_attr('href'):
+                    href = url["href"]
+                    # goes to filmography page instead
+                    if href.endswith("filmography"):
+                        filmography_list.append(href)
+                    else:
+                        movies.append(href)
 
             filmography = filmography.find_next_sibling()
 
