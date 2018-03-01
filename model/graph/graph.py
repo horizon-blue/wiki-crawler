@@ -88,6 +88,12 @@ class Graph:
                 return decoded
             elif isinstance(decoded, list) and len(decoded) == 2:
                 actors, movies = decoded
+                graph = Graph()
+                for actor_name, actor in actors.items():
+                    graph.add_actor(actor, actor_name)
+                for movie_name, movie in movies.items():
+                    graph.add_movie(movie, movie_name)
+                return graph
 
     def dump(self, filename):
         """
