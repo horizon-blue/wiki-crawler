@@ -16,9 +16,9 @@ class Spider(ScrapySpider):
     allowed_domains = ["en.wikipedia.org"]
     start_tasks = []
 
-    # using fake user-agent
-    # source: https://github.com/alecxe/scrapy-fake-useragent
     custom_settings = {
+        # using fake user-agent
+        # source: https://github.com/alecxe/scrapy-fake-useragent
         "DOWNLOADER_MIDDLEWARES": {
             "scrapy.downloadermiddlewares.useragent.UserAgentMiddleware": None,
             "scrapy_fake_useragent.middleware.RandomUserAgentMiddleware": 400,
@@ -26,13 +26,19 @@ class Spider(ScrapySpider):
         "ITEM_PIPELINES": {
             "model.crawler.pipeline.GraphPipeline": 300,
         },
+        # use with CLOSESPIDER_ITEMCOUNT and CLOSESPIDER_TIMEOUT to set a condition
+        # to shut down the spider
         "EXTENSIONS": {
             "scrapy.extensions.closespider.CloseSpider": 1,
         },
-        "COOKIES_ENABLED": False,
-        "DOWNLOAD_DELAY": config.DELAY,
         "CLOSESPIDER_ITEMCOUNT": config.CLOSE_ITEM_COUNT,
         "CLOSESPIDER_TIMEOUT": config.CLOSE_TIMEOUT,
+        # avoid robot detection
+        "COOKIES_ENABLED": False,
+        # delay between two consecutive request
+        "DOWNLOAD_DELAY": config.DELAY,
+        # directory to store paused spider
+        "JOBDIR": config.JOBDIR,
     }
 
     def __init__(self, start_task=(ROOT + config.START_URL, config.START_IS_MOVIE, config.START_IS_FILMOGRAPHY), *args,

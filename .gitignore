@@ -56,3 +56,6 @@ venv/
 
 # json output
 **/output/
+
+# paused spider
+jobdir/
