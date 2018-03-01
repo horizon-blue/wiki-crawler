@@ -174,7 +174,7 @@ class Graph:
         :return: a List containing n actor object. The returning list might be shorter
         than n if the total number of actors is smaller than n
         """
-        actor_rank = sorted(self.actors.values(), key=lambda actor: actor.age, reverse=True)
+        actor_rank = sorted(self.actors.values(), key=lambda actor: (actor.age is not None, actor.age), reverse=True)
         if n > 0:
             return actor_rank[:n]
         return actor_rank
