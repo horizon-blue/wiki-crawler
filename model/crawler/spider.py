@@ -85,14 +85,8 @@ class Spider(ScrapySpider):
         :return: parsed ActorItem or Request
         """
         try:
-            soup = BeautifulSoup(response.text, 'lxml')
-
-            name = re.sub(r"\(.*\)", "", soup.find(id="firstHeading").text).strip()
-
-            info_box = soup.find("table", attrs={"class": "infobox"})
+            soup, name, link, info_box = self.parse_basic_info(response)
             age = self.get_age(info_box)
-            # strip off root url
-            link = response.request.url[len(ROOT):]
 
             movies, filmographies = self.get_movies(soup)
             for movie_url in movies:
@@ -112,11 +106,7 @@ class Spider(ScrapySpider):
         :return: parsed MovieItem or Request
         """
         try:
-            soup = BeautifulSoup(response.text, 'lxml')
-            name = re.sub(r"\(.*\)", "", soup.find(id="firstHeading").text).strip()
-            # strip off root url
-            link = response.request.url[len(ROOT):]
-            info_box = soup.find("table", attrs={"class": "infobox"})
+            soup, name, link, info_box = self.parse_basic_info(response)
             income = self.get_income(info_box)
             starring = self.get_starring(info_box)
             release_date = self.get_release_date(info_box)
@@ -128,6 +118,18 @@ class Spider(ScrapySpider):
                     yield Request(ROOT + actor, meta={'is_movie': False, 'is_filmography': False})
         except AttributeError:
             yield {}
+
+    def parse_basic_info(self, response):
+        """
+        A helper function to parse the basic information on a page
+        :param response:
+        """
+        soup = BeautifulSoup(response.text, 'lxml')
+        name = re.sub(r"\(.*\)", "", soup.find(id="firstHeading").text).strip()
+        # only store the last part (the xxx in https://en.wikipedia.org/wiki/xxx)
+        link = response.request.url.rsplit('/')[-1]
+        info_box = soup.find("table", attrs={"class": "infobox"})
+        return soup, name, link, info_box
 
     def parse_filmography(self, response):
         """
