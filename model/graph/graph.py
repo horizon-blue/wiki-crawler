@@ -173,7 +173,8 @@ class Graph:
         :return: a List containing n actor object. The returning list might be shorter
         than n if the total number of actors is smaller than n
         """
-        actor_rank = sorted(self.actors.values(), key=lambda actor: actor.total_gross, reverse=True)
+        actor_rank = sorted((actor for actor in self.actors.values() if actor.total_gross is not None),
+                            key=lambda actor: actor.total_gross, reverse=True)
         if n > 0:
             return actor_rank[:n]
         return actor_rank
@@ -185,7 +186,8 @@ class Graph:
         :return: a List containing n actor object. The returning list might be shorter
         than n if the total number of actors is smaller than n
         """
-        actor_rank = sorted(self.actors.values(), key=lambda actor: (actor.age is not None, actor.age), reverse=True)
+        actor_rank = sorted((actor for actor in self.actors.values() if actor.age is not None),
+                            key=lambda actor: actor.age, reverse=True)
         if n > 0:
             return actor_rank[:n]
         return actor_rank
@@ -208,9 +210,7 @@ class Graph:
         movies = self.get_movies_by_year(year)
         actors = set()
         for movie in movies:
-            for actor in movie.actors:
-                if actor in self.actors:
-                    actors.add(self.actors[actor])
+            actors.update((self.actors[actor] for actor in movie.actors if actor in self.actors))
         return list(actors)
 
     def get_counts(self):
