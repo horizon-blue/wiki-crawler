@@ -4,6 +4,7 @@ Automat==0.6.0
 beautifulsoup4==4.6.0
 cffi==1.11.4
 constantly==15.1.0
+coverage==4.5.1
 cryptography==2.1.4
 cssselect==1.0.3
 dateparser==0.7.0
