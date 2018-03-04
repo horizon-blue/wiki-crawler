@@ -25,3 +25,14 @@ class Edge(Base):
         :return: a string representation of the node
         """
         return '<{} "{}" "{}">'.format(self.__class__.__name__, self.movie, self.actor)
+
+    def to_dict(self):
+        """
+        A method to convert Edge class do dict
+        :return: a dictionary represents a Edge
+        """
+        return {
+            "movie_id": self.movie_id,
+            "actor_id": self.actor_id,
+            "income": self.income,
+        }

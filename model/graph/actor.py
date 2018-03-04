@@ -50,3 +50,17 @@ class Actor(Base):
         :return: a string representation of the node
         """
         return '<{} "{}">'.format(self.__class__.__name__, self.name)
+
+    def to_dict(self):
+        """
+        A method to convert Actor class do dict
+        :return: a dictionary represents a Actor
+        """
+        return {
+            "id": self.id,
+            "name": self.name,
+            "wiki_page": self.wiki_page,
+            "age": self.age,
+            "total_gross": self.total_gross,
+            "movies": [edge.movie.name for edge in self.movies if edge.movie.name is not None],
+        }

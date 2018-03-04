@@ -49,21 +49,21 @@ class TestGraph(TestCase):
         self.graph.add_movie(self.movie_item)
         movie_node = self.graph.movies["y"]
         # get movie by url
-        self.assertEqual(movie_node, self.graph.get_movie("y"))
+        self.assertEqual(movie_node, self.graph.get_movies("y"))
         # get movie by name
-        self.assertEqual(movie_node, self.graph.get_movie("x"))
+        self.assertEqual(movie_node, self.graph.get_movies("x"))
         # get non-exist movie
-        self.assertIsNone(self.graph.get_movie("foo"))
+        self.assertIsNone(self.graph.get_movies("foo"))
 
     def test_get_actor(self):
         self.graph.add_actor(self.actor_item)
         actor_node = self.graph.actors["b"]
         # get actor by url
-        self.assertEqual(actor_node, self.graph.get_actor("b"))
+        self.assertEqual(actor_node, self.graph.get_actors("b"))
         # get actor by name
-        self.assertEqual(actor_node, self.graph.get_actor("a"))
+        self.assertEqual(actor_node, self.graph.get_actors("a"))
         # get non-exist actor
-        self.assertIsNone(self.graph.get_actor("foo"))
+        self.assertIsNone(self.graph.get_actors("foo"))
 
     def test_get_gross_income(self):
         self.graph.add(self.movie_item)
@@ -77,8 +77,8 @@ class TestGraph(TestCase):
     def test_get_movies(self):
         self.graph.add(self.movie_item)
         self.graph.add(self.actor_item)
-        movie_node = self.graph.get_movie("y")
-        movie_nodes = self.graph.get_movies("b")
+        movie_node = self.graph.get_movies("y")
+        movie_nodes = self.graph.get_movies_for_actor("b")
         self.assertIn(movie_node, movie_nodes)
         self.assertEqual(len(movie_nodes), 1)
 
@@ -87,8 +87,8 @@ class TestGraph(TestCase):
         self.graph.add(self.actor_item)
         actor_item2 = ActorItem(name="foo", url="a", age=10)
         self.graph.add(actor_item2)
-        actor_node = self.graph.get_actor("b")
-        actor_nodes = self.graph.get_actors("y")
+        actor_node = self.graph.get_actors("b")
+        actor_nodes = self.graph.get_actors_for_movie("y")
         self.assertIn(actor_node, actor_nodes)
         self.assertEqual(len(actor_nodes), 2)
 
@@ -99,8 +99,8 @@ class TestGraph(TestCase):
         self.graph.add(actor_item2)
         actor_rank = self.graph.get_actor_rank(2)
         actor_rank2 = self.graph.get_actor_rank(-1)
-        self.assertIs(self.graph.get_actor("foo"), actor_rank[0])
-        self.assertIs(self.graph.get_actor("b"), actor_rank[1])
+        self.assertIs(self.graph.get_actors("foo"), actor_rank[0])
+        self.assertIs(self.graph.get_actors("b"), actor_rank[1])
         self.assertEqual(actor_rank, actor_rank2)
 
     def test_get_oldest_actors(self):
@@ -110,8 +110,8 @@ class TestGraph(TestCase):
         self.graph.add(actor_item2)
         actor_rank = self.graph.get_oldest_actors(2)
         actor_rank2 = self.graph.get_oldest_actors(-1)
-        self.assertIs(self.graph.get_actor("foo"), actor_rank[0])
-        self.assertIs(self.graph.get_actor("b"), actor_rank[1])
+        self.assertIs(self.graph.get_actors("foo"), actor_rank[0])
+        self.assertIs(self.graph.get_actors("b"), actor_rank[1])
         self.assertEqual(actor_rank, actor_rank2)
 
     def setup_movie_years(self):
@@ -127,7 +127,7 @@ class TestGraph(TestCase):
         self.setup_movie_years()
         movies = self.graph.get_movies_by_year(2018)
         self.assertEqual(len(movies), 2)
-        self.assertNotIn(self.graph.get_movie("q"), movies)
+        self.assertNotIn(self.graph.get_movies("q"), movies)
 
     def test_get_actors_by_year(self):
         self.setup_movie_years()
