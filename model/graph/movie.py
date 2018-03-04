@@ -1,12 +1,11 @@
 from sqlalchemy import Column, Integer, Text, Float, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime, MINYEAR, MAXYEAR
-
 from database import Base
-from .node import Node
+from .util import get_wiki_page
 
 
-class Movie(Base, Node):
+class Movie(Base):
     """
     The represent the movie nodes in the graph
     (SQLAlchemy model: movie)
@@ -22,7 +21,7 @@ class Movie(Base, Node):
     release_date = Column(DateTime)
 
     # relationship to actors
-    actors = relationship("Edge", back_populates="actor")
+    actors = relationship("Edge", back_populates="movie")
 
     def __init__(self, movie_item):
         """
@@ -33,7 +32,7 @@ class Movie(Base, Node):
 
         self.name = movie_item.get("name")
         self.box_office = movie_item.get("box_office", 0)
-        self.set_wiki_page(movie_item.get("wiki_page"))
+        self.wiki_page = get_wiki_page(movie_item.get("wiki_page"))
 
         self.release_date = movie_item.get("release_date")
 

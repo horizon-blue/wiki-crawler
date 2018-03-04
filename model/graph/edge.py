@@ -16,5 +16,5 @@ class Edge(Base):
 
     # the data stored by the edge
     income = Column(Float)
-    movie = relationship("Movie", back_populates="movies")
-    actor = relationship("Actor", back_populates="actors")
+    movie = relationship("Movie", back_populates="actors")
+    actor = relationship("Actor", back_populates="movies")

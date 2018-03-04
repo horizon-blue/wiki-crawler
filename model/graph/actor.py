@@ -1,11 +1,11 @@
 from sqlalchemy import Column, Integer, Text, Boolean, Float, DateTime
 from sqlalchemy.orm import relationship
 from database import Base
-from .node import Node
+from .util import get_wiki_page
 from model.crawler import ActorItem
 
 
-class Actor(Base, Node):
+class Actor(Base):
     """
     The represent the actor nodes in the graph
     (SQLAlchemy model: actor)
@@ -21,7 +21,7 @@ class Actor(Base, Node):
     total_gross = Column(Float)
 
     # relationship to movies
-    movies = relationship("Edge", back_populates="movie")
+    movies = relationship("Edge", back_populates="actor")
 
     def __init__(self, item=None):
         """
@@ -42,4 +42,4 @@ class Actor(Base, Node):
         self.name = item.get("name", self.name)
         self.age = item.get("age", self.age)
         self.total_gross = item.get("total_gross", 0 if self.total_gross is None else self.total_gross)
-        self.set_wiki_page(item.get("wiki_page", self.wiki_page))
+        self.wiki_page = get_wiki_page(item.get("wiki_page", self.wiki_page))
