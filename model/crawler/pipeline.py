@@ -50,7 +50,7 @@ class GraphPipeline:
             logging.info(
                 "Processed {} at {}. "
                 "Current Progress - movies: {}, actors: {}".format(
-                    item.__class__.__name__, item["url"], count[0], count[1]))
+                    item.__class__.__name__, item["wiki_page"], count[0], count[1]))
             return item
         except (KeyError, ValueError):
             raise DropItem("Incomplete info in %s" % item)

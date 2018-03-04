@@ -2,11 +2,10 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
-from config import DATABASE_FILE
+from config import DATABASE_FILE, DIR_PATH
 
 # get the absolute path of current directory
-dir_path = os.path.dirname(os.path.realpath(__file__))
-DATABASE_ADDRESS = "sqlite:///{}/{}".format(dir_path, DATABASE_FILE)
+DATABASE_ADDRESS = "sqlite:///{}/{}".format(DIR_PATH, DATABASE_FILE)
 
 # reference: http://flask.pocoo.org/docs/0.12/patterns/sqlalchemy/
 

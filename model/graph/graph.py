@@ -18,6 +18,7 @@ class Graph:
         # dictionary to store the url for given name
         self.urls = {}
 
+    # noinspection PyTypeChecker
     def add(self, item):
         """
         Add the item to the graph based on its type

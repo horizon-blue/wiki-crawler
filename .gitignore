@@ -59,3 +59,6 @@ venv/
 
 # paused spider
 jobdir/
+
+# database file
+database/db.sqlite3
