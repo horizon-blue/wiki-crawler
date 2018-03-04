@@ -1,8 +1,8 @@
 from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.exc import IntegrityError, InvalidRequestError
 from sqlalchemy import extract
-import os
 import jsonpickle
+import os
 from model.graph import Actor, Movie, Edge
 from ..crawler import ActorItem, MovieItem
 
@@ -122,24 +122,22 @@ class Graph:
             self.session.rollback()
 
     @classmethod
-    def load(cls, filename):
+    def load(cls, filename, session=None):
         """
         Load the graph from given file
         :param filename: the file to load the graph
         :return: the graph loaded
         """
-        # with open(filename) as file:
-        #     decoded = jsonpickle.decode(file.read())
-        #     if isinstance(decoded, Graph):
-        #         return decoded
-        #     elif isinstance(decoded, list) and len(decoded) == 2:
-        #         actors, movies = decoded
-        #         graph = Graph()
-        #         for movie_name, movie in movies.items():
-        #             graph.add_movie(movie, movie_name)
-        #         for actor_name, actor in actors.items():
-        #             graph.add_actor(actor, actor_name)
-        #         return graph
+        with open(filename) as file:
+            decoded = jsonpickle.decode(file.read())
+            if isinstance(decoded, list) and len(decoded) == 2:
+                actors, movies = decoded
+                graph = Graph(session)
+                for movie_name, movie in movies.items():
+                    graph.add_movie(movie, external=True)
+                for actor_name, actor in actors.items():
+                    graph.add_actor(actor, external=True)
+                return graph
 
     def dump(self, filename):
         """

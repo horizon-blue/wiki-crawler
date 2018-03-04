@@ -28,4 +28,4 @@ JSON_OUTPUT_FILE = "output/out.json"
 JOBDIR = "jobdir"
 
 # name of the database file.
-DATABASE_FILE = "database/db.sqlite3"
+DATABASE_FILE = "output/external.sqlite3"
