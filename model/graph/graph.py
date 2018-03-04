@@ -2,7 +2,6 @@ from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.exc import IntegrityError, InvalidRequestError
 from sqlalchemy import extract
 import json
-import os
 from model.graph import Actor, Movie, Edge
 from ..crawler import ActorItem, MovieItem
 
@@ -158,6 +157,24 @@ class Graph:
         :return: The actor query
         """
         return Actor.query.filter_by(**kwargs)
+
+    @staticmethod
+    def filter_actors(**kwargs):
+        """
+        A helper method to query the actors
+        :param kwargs:  the filter used to select the actor
+        :return: The actor query
+        """
+        return Actor.query.filter(**kwargs)
+
+    @staticmethod
+    def filter_movies(**kwargs):
+        """
+        A helper method to query the movies
+        :param kwargs:  the filter used to select the movie
+        :return: The movie query
+        """
+        return Movie.query.filter(**kwargs)
 
     def get_box_office(self, **kwargs):
         """
