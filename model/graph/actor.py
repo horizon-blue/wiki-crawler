@@ -43,3 +43,10 @@ class Actor(Base):
         self.age = item.get("age", self.age)
         self.total_gross = item.get("total_gross", 0 if self.total_gross is None else self.total_gross)
         self.wiki_page = get_wiki_page(item.get("wiki_page", self.wiki_page))
+
+    def __repr__(self):
+        """
+        Representation of the node
+        :return: a string representation of the node
+        """
+        return '<{} "{}">'.format(self.__class__.__name__, self.name)

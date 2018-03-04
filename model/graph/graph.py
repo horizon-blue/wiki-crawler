@@ -1,9 +1,10 @@
 from sqlalchemy.orm.scoping import scoped_session
+from sqlalchemy import extract
 import os
 import jsonpickle
 from model.graph import Actor, Movie, Edge
 from ..crawler import ActorItem, MovieItem
-from .util import get_filter
+from .util import get_wiki_page
 
 
 class Graph:
@@ -40,12 +41,6 @@ class Graph:
         if self.own_session:
             self.session.remove()
 
-    def commit(self):
-        """
-        A helper function to commit the changes made in current session
-        """
-        self.session.commit()
-
     # noinspection PyTypeChecker
     def add(self, item):
         """
@@ -57,20 +52,22 @@ class Graph:
         elif isinstance(item, MovieItem):
             self.add_movie(item)
 
-    def add_actor(self, actor_item):
+    def add_actor(self, actor_item, external=False):
         """
         Create an actor vertex for the given vector, or merge to existing one
         :param actor_item: the ActorItem for the given actor
+        :param external: whether we are constructing from external data
         """
         # check if the given actor already existed, search by name or wiki page
-        actor_filter = get_filter(actor_item)
-        actor = self.get_actor(**actor_filter).first() if actor_filter else None
+        actor = self.get_actor(name=actor_item.get("name")).first() if external \
+            else self.get_actor(wiki_page=actor_item.get("wiki_page")).first()
 
         if actor is None:
             actor = Actor(actor_item)
         else:
             actor.update(actor_item)
         self.session.add(actor)
+        self.session.commit()
 
     def add_movie(self, movie_item, external=False):
         """
@@ -79,8 +76,8 @@ class Graph:
         :param movie_item: the movie item to add
         :param external: whether we are constructing from external data
         """
-        movie_filter = get_filter(movie_item)
-        movie = self.get_actor(**movie_filter).first() if movie_filter else None
+        movie = self.get_movie(name=movie_item.get("name")).first() if external \
+            else self.get_movie(wiki_page=movie_item.get("wiki_page")).first()
 
         if movie is None:
             movie = Movie(movie_item)
@@ -95,10 +92,21 @@ class Graph:
             m = len(actors)
             for index, actor_key in enumerate(actors):
                 n = index + 1
-                actor = self.get_actor(name=actor_key).first() if external \
-                    else self.get_actor(wiki_page=actor_key).first()
+                actor_filter = {"name": actor_key} if external else {"wiki_page": actor_key}
+                actor = self.get_actor(**actor_filter).first()
                 if actor is None:
-                    actor = Actor({})
+                    actor = Actor(actor_filter)
+                income = 2 * (m + 1 - n) / (m * (m + 1)) * movie_item.get("box_office", 0)
+                # creates the relationship
+                if movie.id is not None and actor.id is not None:
+                    edge = Edge.query.filter_by(movie_id=movie.id, actor_id=actor.id).first()
+                    if edge is not None:
+                        edge.income = income
+                        self.session.add(edge)
+                        continue
+                edge = Edge(actor=actor, movie=movie, income=income)
+                self.session.add(edge)
+        self.session.commit()
 
     @classmethod
     def load(cls, filename):
@@ -128,14 +136,15 @@ class Graph:
         """
         # creates the directory if none exists
         # source: https://stackoverflow.com/questions/12517451/automatically-creating-directories-with-file-output
-        dirname = os.path.dirname(filename)
-        if dirname != '':
-            os.makedirs(dirname, exist_ok=True)
+        # dirname = os.path.dirname(filename)
+        # if dirname != '':
+        #     os.makedirs(dirname, exist_ok=True)
+        #
+        # with open(filename, "w") as file:
+        #     file.write(jsonpickle.encode(self))
 
-        with open(filename, "w") as file:
-            file.write(jsonpickle.encode(self))
-
-    def get_movie(self, **kwargs):
+    @staticmethod
+    def get_movie(**kwargs):
         """
         Query to get the movie node object based on its name or url
         :param kwargs: the filter used to select the movie
@@ -143,7 +152,8 @@ class Graph:
         """
         return Movie.query.filter_by(**kwargs)
 
-    def get_actor(self, **kwargs):
+    @staticmethod
+    def get_actor(**kwargs):
         """
         Query to get the actor node object based on its name or url
         :param kwargs: the filter used to select the actor
@@ -151,15 +161,15 @@ class Graph:
         """
         return Actor.query.filter_by(**kwargs)
 
-    def get_box_office(self, movie):
+    def get_box_office(self, **kwargs):
         """
         Query to get the gross income given a movie url
-        :param movie: the name or url of the movie
+        :param kwargs: query arguments to search the movie
         :return: gross income of a movie, or None if no data is found
         """
-        movie_node = self.get_movie(movie)
-        if movie_node is not None:
-            return movie_node.box_office
+        movie = self.get_movie(**kwargs).first()
+        if movie is not None:
+            return movie.box_office
 
     def get_movies(self, **kwargs):
         """
@@ -172,28 +182,24 @@ class Graph:
         if actor is not None:
             return
 
-    def get_actors(self, movie):
+    def get_actors(self, **kwargs):
         """
         Query to get the list of actors the given movie has
-        :param movie: the name or url of the movie
+        :param kwargs: query arguments to search the movie
         :return: list of the actors that the movie has, or None if no data is found
         """
-        movie_node = self.get_movie(movie)
-        if movie_node is not None:
-            return [self.actors[actor] for actor in movie_node.actors if actor in self.actors]
+        movie = self.get_movie(**kwargs).first()
+        if movie is not None:
+            return [edge.actor for edge in movie.actors]
 
     def get_actor_rank(self, n=10):
         """
         Get the top n actors with highest gross income
-        :param n: the number of actors to get, or non-positive int to get all actors
+        :param n: the number of actors to get, or negative int to get all actors
         :return: a List containing n actor object. The returning list might be shorter
         than n if the total number of actors is smaller than n
         """
-        actor_rank = sorted((actor for actor in self.actors.values() if actor.total_gross is not None),
-                            key=lambda actor: actor.total_gross, reverse=True)
-        if n > 0:
-            return actor_rank[:n]
-        return actor_rank
+        return self.get_actor().order_by(Actor.total_gross.desc()).limit(n).all()
 
     def get_oldest_actors(self, n=10):
         """
@@ -202,11 +208,7 @@ class Graph:
         :return: a List containing n actor object. The returning list might be shorter
         than n if the total number of actors is smaller than n
         """
-        actor_rank = sorted((actor for actor in self.actors.values() if actor.age is not None),
-                            key=lambda actor: actor.age, reverse=True)
-        if n > 0:
-            return actor_rank[:n]
-        return actor_rank
+        return self.get_actor().order_by(Actor.age.desc()).limit(n).all()
 
     def get_movies_by_year(self, year):
         """
@@ -214,8 +216,7 @@ class Graph:
         :param year: the year to lookup
         :return: a list of MovieNode in a given year
         """
-        return [movie for movie in self.movies.values()
-                if movie.release_date is not None and movie.release_date.year == year]
+        return self.get_movie().filter(extract('year', Movie.release_date) == year).all()
 
     def get_actors_by_year(self, year):
         """
@@ -223,15 +224,5 @@ class Graph:
         :param year: the year to lookup
         :return: a list of ActorNode in a given year
         """
-        movies = self.get_movies_by_year(year)
-        actors = set()
-        for movie in movies:
-            actors.update((self.actors[actor] for actor in movie.actors if actor in self.actors))
-        return list(actors)
-
-    def get_counts(self):
-        """
-        Get the number of movies and actors crawled
-        :return: (movie_count, actor_count) tuple
-        """
-        return len(self.movies), len(self.actors)
+        # search through movie
+        return self.get_actor().join(Edge).join(Movie).filter(extract('year', Movie.release_date) == year).all()

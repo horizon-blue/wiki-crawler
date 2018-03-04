@@ -1,6 +1,7 @@
 from scrapy.exceptions import DropItem
 from ..graph import Graph
 from .item import MovieItem
+from database import db_session
 from config import JSON_OUTPUT_FILE, RESUME
 import logging
 
@@ -9,7 +10,9 @@ class GraphPipeline:
     """
     The pipeline that process the items return by the crawler
     """
-    graph = Graph()
+    graph = Graph(db_session)
+    actor_count = 0
+    movie_count = 0
 
     def open_spider(self, _):
         """
@@ -32,6 +35,8 @@ class GraphPipeline:
         if JSON_OUTPUT_FILE is not None:
             self.graph.dump(JSON_OUTPUT_FILE)
 
+        db_session.remove()
+
     def process_item(self, item, _):
         """
         Add new item to the graph
@@ -44,13 +49,16 @@ class GraphPipeline:
                 if item.get("box_office") is None or not item.get("actors"):
                     raise ValueError("missing actors or income information")
             self.graph.add(item)
+            if isinstance(item, MovieItem):
+                self.movie_count += 1
+            else:
+                self.actor_count += 1
 
-            count = self.graph.get_counts()
             # logging
             logging.info(
                 "Processed {} at {}. "
                 "Current Progress - movies: {}, actors: {}".format(
-                    item.__class__.__name__, item["wiki_page"], count[0], count[1]))
+                    item.__class__.__name__, item["wiki_page"], self.movie_count, self.actor_count))
             return item
         except (KeyError, ValueError):
             raise DropItem("Incomplete info in %s" % item)

@@ -18,3 +18,10 @@ class Edge(Base):
     income = Column(Float)
     movie = relationship("Movie", back_populates="actors")
     actor = relationship("Actor", back_populates="movies")
+
+    def __repr__(self):
+        """
+        Representation of the node
+        :return: a string representation of the node
+        """
+        return '<{} "{}" "{}">'.format(self.__class__.__name__, self.movie, self.actor)

@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from datetime import datetime, MINYEAR, MAXYEAR
 from database import Base
 from .util import get_wiki_page
+from model.crawler import MovieItem
 
 
 class Movie(Base):
@@ -23,7 +24,7 @@ class Movie(Base):
     # relationship to actors
     actors = relationship("Edge", back_populates="movie")
 
-    def __init__(self, item):
+    def __init__(self, item=None):
         """
         Create a node to hold value for a movie
         :param movie_item: the MovieItem object or dict of the movie
@@ -37,6 +38,8 @@ class Movie(Base):
         Update current movie node using other actor node
         :param item: the item or dict representing other movie
         """
+        if not (isinstance(item, MovieItem) or isinstance(item, dict)):
+            return
         self.name = item.get("name", self.name)
         self.box_office = item.get("box_office", 0 if self.box_office is None else self.box_office)
         self.wiki_page = get_wiki_page(item.get("wiki_page", self.wiki_page))
@@ -48,3 +51,10 @@ class Movie(Base):
             year = item.get("year")
             if MINYEAR <= year <= MAXYEAR:
                 self.release_date = datetime(year, 1, 1)
+
+    def __repr__(self):
+        """
+        Representation of the node
+        :return: a string representation of the node
+        """
+        return '<{} "{}">'.format(self.__class__.__name__, self.name)

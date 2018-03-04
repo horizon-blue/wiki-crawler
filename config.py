@@ -17,7 +17,7 @@ CLOSE_TIMEOUT = 7200
 CLOSE_ITEM_COUNT = 0
 
 # decide whether or not to resume from previous work
-RESUME = True
+RESUME = False
 
 # the output file to store result as json (if None then no file is dumped)
 # this will be the recover file if RESUME is True
