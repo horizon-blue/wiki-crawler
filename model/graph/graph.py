@@ -4,7 +4,6 @@ import os
 import jsonpickle
 from model.graph import Actor, Movie, Edge
 from ..crawler import ActorItem, MovieItem
-from .util import get_wiki_page
 
 
 class Graph:
@@ -115,18 +114,18 @@ class Graph:
         :param filename: the file to load the graph
         :return: the graph loaded
         """
-        with open(filename) as file:
-            decoded = jsonpickle.decode(file.read())
-            if isinstance(decoded, Graph):
-                return decoded
-            elif isinstance(decoded, list) and len(decoded) == 2:
-                actors, movies = decoded
-                graph = Graph()
-                for movie_name, movie in movies.items():
-                    graph.add_movie(movie, movie_name)
-                for actor_name, actor in actors.items():
-                    graph.add_actor(actor, actor_name)
-                return graph
+        # with open(filename) as file:
+        #     decoded = jsonpickle.decode(file.read())
+        #     if isinstance(decoded, Graph):
+        #         return decoded
+        #     elif isinstance(decoded, list) and len(decoded) == 2:
+        #         actors, movies = decoded
+        #         graph = Graph()
+        #         for movie_name, movie in movies.items():
+        #             graph.add_movie(movie, movie_name)
+        #         for actor_name, actor in actors.items():
+        #             graph.add_actor(actor, actor_name)
+        #         return graph
 
     def dump(self, filename):
         """
