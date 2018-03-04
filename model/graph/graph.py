@@ -100,15 +100,20 @@ class Graph:
                 actor = self.get_actor(**actor_filter).first()
                 if actor is None:
                     actor = Actor(actor_filter)
-                income = 2 * (m + 1 - n) / (m * (m + 1)) * movie_item.get("box_office", 0)
+                # do not calculate edge weight if importing external data
+                income = 2 * (m + 1 - n) / (m * (m + 1)) * movie_item.get("box_office", 0) if not external else 0
                 # creates the relationship
                 edge = None
                 if movie.id is not None and actor.id is not None:
                     edge = Edge.query.filter_by(movie_id=movie.id, actor_id=actor.id).first()
                 if edge is not None:
+                    # replace previous income by current one
+                    actor.total_gross -= edge.income if edge.income is not None else 0
                     edge.income = income
                 else:
                     edge = Edge(actor=actor, movie=movie, income=income)
+                actor.total_gross += income
+
                 self.session.add(actor)
                 self.session.add(edge)
         try:

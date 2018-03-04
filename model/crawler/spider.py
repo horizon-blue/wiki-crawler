@@ -217,7 +217,7 @@ class Spider(ScrapySpider):
         """
         try:
             # use regular expression to remove everything in parenthesis, if any
-            box_office = re.sub(r"\(.*\)", "", box_office).strip()
+            box_office = re.sub(r"[(\[].*[)\]]", "", box_office).strip()
 
             # remove currency symbol, million/billion endings and comma
             box_office_value = float(box_office.strip("$mbtrillion").replace(',', ''))
