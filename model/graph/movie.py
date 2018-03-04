@@ -23,21 +23,28 @@ class Movie(Base):
     # relationship to actors
     actors = relationship("Edge", back_populates="movie")
 
-    def __init__(self, movie_item):
+    def __init__(self, item):
         """
         Create a node to hold value for a movie
         :param movie_item: the MovieItem object or dict of the movie
         """
         super(Movie, self).__init__()
 
-        self.name = movie_item.get("name")
-        self.box_office = movie_item.get("box_office", 0)
-        self.wiki_page = get_wiki_page(movie_item.get("wiki_page"))
+        self.update(item)
 
-        self.release_date = movie_item.get("release_date")
+    def update(self, item):
+        """
+        Update current movie node using other actor node
+        :param item: the item or dict representing other movie
+        """
+        self.name = item.get("name", self.name)
+        self.box_office = item.get("box_office", 0 if self.box_office is None else self.box_office)
+        self.wiki_page = get_wiki_page(item.get("wiki_page", self.wiki_page))
+
+        self.release_date = item.get("release_date", self.release_date)
 
         # setup release date
-        if self.release_date is None and "year" in movie_item:
-            year = movie_item.get("year")
+        if self.release_date is None and "year" in item:
+            year = item.get("year")
             if MINYEAR <= year <= MAXYEAR:
                 self.release_date = datetime(year, 1, 1)

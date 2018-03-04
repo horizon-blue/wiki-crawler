@@ -1,22 +1,50 @@
+from sqlalchemy.orm.scoping import scoped_session
 import os
 import jsonpickle
-from .node import ActorNode, MovieNode
+from model.graph import Actor, Movie, Edge
 from ..crawler import ActorItem, MovieItem
+from .util import get_filter
 
 
 class Graph:
     """
     The graph class that holds all nodes and edges
     """
-    def __init__(self):
+
+    def __init__(self, session=None):
         """
         Initialize the graph with two kinds of nodes
+        :param session: the database session. If None is given,
+        then the graph will creates its own session (remember to
+        close the graph)
         """
-        self.movies = {}
-        self.actors = {}
+        if session is None:
+            from database import db_session
+            self.session = db_session
+            self.own_session = True
+        else:
+            if not isinstance(session, scoped_session):
+                raise TypeError("'session' must be a scoped database session")
+            self.session = session
 
-        # dictionary to store the url for given name
-        self.urls = {}
+    def __enter__(self):
+        """
+        Enable the use of "with"
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Close the session if the database session is owned by the graph itself
+        """
+        if self.own_session:
+            self.session.remove()
+
+    def commit(self):
+        """
+        A helper function to commit the changes made in current session
+        """
+        self.session.commit()
 
     # noinspection PyTypeChecker
     def add(self, item):
@@ -29,51 +57,48 @@ class Graph:
         elif isinstance(item, MovieItem):
             self.add_movie(item)
 
-    def add_url_map(self, name, url):
-        """
-        Helper function to associate name with url
-        :param name: name of the node
-        :param url: url of the node
-        """
-        self.urls[name] = url
-
-    def add_actor(self, actor_item, url=""):
+    def add_actor(self, actor_item):
         """
         Create an actor vertex for the given vector, or merge to existing one
         :param actor_item: the ActorItem for the given actor
-        :param url: a replacement url that overwrites the url in actor_item
         """
-        url = actor_item.get("wiki_page", url) if url == "" else url
+        # check if the given actor already existed, search by name or wiki page
+        actor_filter = get_filter(actor_item)
+        actor = self.get_actor(**actor_filter).first() if actor_filter else None
 
-        if url in self.actors:  # actor is already created by movie
-            self.actors[url].update(actor_item)
+        if actor is None:
+            actor = Actor(actor_item)
         else:
-            self.actors[url] = ActorNode(actor_item)
+            actor.update(actor_item)
+        self.session.add(actor)
 
-        if "name" in actor_item and url != actor_item.get("name"):
-            self.add_url_map(actor_item.get("name"), url)
-
-    def add_movie(self, movie_item, url=""):
+    def add_movie(self, movie_item, external=False):
         """
         Create movie vertex for the given movie, and update all actors associate with
         the movie
         :param movie_item: the movie item to add
-        :param url: a replacement url that overwrites the url in movie_item
+        :param external: whether we are constructing from external data
         """
-        url = movie_item.get("wiki_page", url) if url == "" else url
-        if url in self.movies:  # do nothing if move exists
-            return
-        movie_node = MovieNode(movie_item)
-        self.movies[url] = movie_node
+        movie_filter = get_filter(movie_item)
+        movie = self.get_actor(**movie_filter).first() if movie_filter else None
 
-        for actor in movie_node.actors:
-            if actor not in self.actors:  # create the actor for the movie
-                self.actors[actor] = ActorNode({"wiki_page": actor})
-            # link movie to actors
-            self.actors[actor].add_movie(url, movie_node.get_actor_income(actor))
+        if movie is None:
+            movie = Movie(movie_item)
+        else:
+            movie.update(movie_item)
+        self.session.add(movie)
 
-        if "name" in movie_item and url != movie_item.get("name"):
-            self.add_url_map(movie_item.get("name"), url)
+        # add relationship to actors
+        # the nth actor have 2 * (m + 1 - n) / (m * (m + 1)) of the movies gross income
+        actors = movie_item.get("actors")
+        if isinstance(actors, list):
+            m = len(actors)
+            for index, actor_key in enumerate(actors):
+                n = index + 1
+                actor = self.get_actor(name=actor_key).first() if external \
+                    else self.get_actor(wiki_page=actor_key).first()
+                if actor is None:
+                    actor = Actor({})
 
     @classmethod
     def load(cls, filename):
@@ -110,31 +135,21 @@ class Graph:
         with open(filename, "w") as file:
             file.write(jsonpickle.encode(self))
 
-    def get_movie(self, movie):
+    def get_movie(self, **kwargs):
         """
         Query to get the movie node object based on its name or url
-        :param movie: name or url of the movie
-        :return: MovieNode, or None if no data is found
+        :param kwargs: the filter used to select the movie
+        :return: The movie query
         """
-        if movie in self.movies:
-            return self.movies[movie]
-        elif movie in self.urls:
-            return self.movies[self.urls[movie]]
-        else:
-            return None
+        return Movie.query.filter_by(**kwargs)
 
-    def get_actor(self, actor):
+    def get_actor(self, **kwargs):
         """
         Query to get the actor node object based on its name or url
-        :param actor: name or url of the actor
-        :return: ActorNode, or None if no data is found
+        :param kwargs: the filter used to select the actor
+        :return: The actor query
         """
-        if actor in self.actors:
-            return self.actors[actor]
-        elif actor in self.urls:
-            return self.actors[self.urls[actor]]
-        else:
-            return None
+        return Actor.query.filter_by(**kwargs)
 
     def get_box_office(self, movie):
         """
@@ -146,15 +161,16 @@ class Graph:
         if movie_node is not None:
             return movie_node.box_office
 
-    def get_movies(self, actor):
+    def get_movies(self, **kwargs):
         """
         Query to get the list of movies the given actor has worked in
-        :param actor: the name or url of the actor
-        :return: list of the movies that the actor is in, or None if no data is found
+        :param kwargs: query arguments to search the actor
+        :return: list of the movies that the first matching actor is in,
+         or None if no data is found
         """
-        actor_node = self.get_actor(actor)
-        if actor_node is not None:
-            return [self.movies[movie] for movie in actor_node.movies]
+        actor = self.get_actor(**kwargs).first()
+        if actor is not None:
+            return
 
     def get_actors(self, movie):
         """

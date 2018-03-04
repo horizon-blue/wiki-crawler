@@ -20,6 +20,6 @@ Base.query = db_session.query_property()
 # for quick setup, this should be run to initialize the database for the first time
 def init_db():
     # noinspection PyUnresolvedReferences
-    import model.graph
+    from model.graph import Edge, Movie, Actor
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
