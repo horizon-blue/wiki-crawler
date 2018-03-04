@@ -147,7 +147,7 @@ class Spider(ScrapySpider):
                 stop_token = "h3"
             urls = filmography.find_all("a")
             for url in urls:
-                if url.has_attr('href'):
+                if url.has_attr('href') and not url["href"].startswith("#"):
                     href = url["href"]
                     # goes to filmography page instead
                     if href.endswith("filmography"):
@@ -203,7 +203,8 @@ class Spider(ScrapySpider):
         """
         try:
             starring = info_box.find(text="Starring").find_parent("tr")
-            return [url["href"] for url in starring.find_all("a")]
+            return [url["href"] for url in starring.find_all("a") if
+                    url.has_attr("href") and not url["href"].startswith("#")]
         except AttributeError:
             return []
 

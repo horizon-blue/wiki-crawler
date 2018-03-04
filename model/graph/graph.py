@@ -1,4 +1,5 @@
 from sqlalchemy.orm.scoping import scoped_session
+from sqlalchemy.exc import IntegrityError, InvalidRequestError
 from sqlalchemy import extract
 import os
 import jsonpickle
@@ -66,7 +67,11 @@ class Graph:
         else:
             actor.update(actor_item)
         self.session.add(actor)
-        self.session.commit()
+
+        try:
+            self.session.commit()
+        except (IntegrityError, InvalidRequestError):  # unlikely to happen, but just in case
+            self.session.rollback()
 
     def add_movie(self, movie_item, external=False):
         """
@@ -97,15 +102,19 @@ class Graph:
                     actor = Actor(actor_filter)
                 income = 2 * (m + 1 - n) / (m * (m + 1)) * movie_item.get("box_office", 0)
                 # creates the relationship
+                edge = None
                 if movie.id is not None and actor.id is not None:
                     edge = Edge.query.filter_by(movie_id=movie.id, actor_id=actor.id).first()
-                    if edge is not None:
-                        edge.income = income
-                        self.session.add(edge)
-                        continue
-                edge = Edge(actor=actor, movie=movie, income=income)
+                if edge is not None:
+                    edge.income = income
+                else:
+                    edge = Edge(actor=actor, movie=movie, income=income)
+                self.session.add(actor)
                 self.session.add(edge)
-        self.session.commit()
+        try:
+            self.session.commit()
+        except (IntegrityError, InvalidRequestError):  # unlikely to happen, but just in case
+            self.session.rollback()
 
     @classmethod
     def load(cls, filename):

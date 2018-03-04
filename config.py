@@ -11,13 +11,13 @@ START_IS_FILMOGRAPHY = False
 DELAY = 0.25
 
 # timeout, in seconds, for the spider to close itself (set to 0 to disable timeout)
-CLOSE_TIMEOUT = 7200
+CLOSE_TIMEOUT = 0
 
 # number of parsed item for the spider to close itself (set to 0 to disable item count)
 CLOSE_ITEM_COUNT = 0
 
 # decide whether or not to resume from previous work
-RESUME = False
+RESUME = True
 
 # the output file to store result as json (if None then no file is dumped)
 # this will be the recover file if RESUME is True
