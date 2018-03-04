@@ -22,3 +22,6 @@ JSON_OUTPUT_FILE = "output/out.json"
 # place to stored paused file
 # this will be the recover file if RESUME is True
 JOBDIR = "jobdir"
+
+# name of the database file.
+DATABASE_FILE = "database/db.sqlite3"
