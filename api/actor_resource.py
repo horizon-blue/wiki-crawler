@@ -58,7 +58,8 @@ class ActorQueryResource(Resource):
         if changes is None:
             abort(400, message="Incorrect mimetype or invalid json")
         else:
-            graph.add_actor(changes, external=True), 201
+            graph.add_actor(changes, external=True)
+            return changes, 201
 
 
 class ActorResource(Resource):

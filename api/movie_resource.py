@@ -59,7 +59,8 @@ class MovieQueryResource(Resource):
         if changes is None:
             abort(400, message="Incorrect mimetype or invalid json")
         else:
-            graph.add_movie(changes, external=True), 201
+            graph.add_movie(changes, external=True)
+            return changes, 201
 
 
 class MovieResource(Resource):

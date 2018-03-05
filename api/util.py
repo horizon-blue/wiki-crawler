@@ -7,7 +7,7 @@ def decode(string):
     :param string: the string to decode
     :return: the decoded string
     """
-    return unquote(string.strip("%22"))
+    return unquote(string.replace("%22", ""))
 
 
 def parse_query(query_string):

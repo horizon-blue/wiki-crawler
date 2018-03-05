@@ -85,3 +85,47 @@ class TestAPI(TestCase):
         self.assertIsNotNone(movie)
         self.assertEqual(movie.get("name"), "Sunset")
         self.assertEqual(movie.get("box_office"), 2345)
+
+    def test_post_actor(self):
+        response = self.app.post("/api/actors", data=json.dumps({"name": "foo", "age": 3}))
+        self.assertEqual(response.status_code, 400)
+
+        response = self.app.post("/api/actors", data=json.dumps({"name": "foo", "age": 3}),
+                                 content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        actor = json.loads(response.data)
+        self.assertEqual(actor.get("name"), "foo")
+        self.assertEqual(actor.get("age"), 3)
+
+    def test_post_movie(self):
+        response = self.app.post("/api/movies", data=json.dumps({"name": "foo", "box_office": 233}))
+        self.assertEqual(response.status_code, 400)
+
+        response = self.app.post("/api/movies", data=json.dumps({"name": "foo", "box_office": 233}),
+                                 content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        movie = json.loads(response.data)
+        self.assertEqual(movie.get("name"), "foo")
+        self.assertEqual(movie.get("box_office"), 233)
+
+    def test_delete(self):
+        actor_url = "/api/actors/Faye_Dunaway"
+        self.assertEqual(self.app.get(actor_url).status_code, 200)
+        self.app.delete(actor_url)
+        self.assertEqual(self.app.get(actor_url).status_code, 404)
+        movie_url = "/api/movies/Sunset"
+        self.assertEqual(self.app.get(movie_url).status_code, 200)
+        self.app.delete(movie_url)
+        self.assertEqual(self.app.get(movie_url).status_code, 404)
+
+    def get_actor_query(self, query):
+        actor_url = "/api/actors?"
+        return json.loads(self.app.get(actor_url + query).data)
+
+    def get_movie_query(self, query):
+        movie_url = "api/movies?"
+        return json.loads(self.app.get(movie_url + query).data)
+
+    def test_actor_query(self):
+        actors = self.get_actor_query("name=Willis")
+        self.assertEqual(len(actors), 1)
