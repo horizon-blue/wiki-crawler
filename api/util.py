@@ -23,7 +23,7 @@ def parse_query(query_string):
         for attr in query.split('&'):
             pair = attr.split('=')
             if len(pair) != 2:
-                continue
+                raise ValueError("incorrect number of arguments")
             query_dict[decode(pair[0])] = decode(pair[1])
         result.append(query_dict)
     return result

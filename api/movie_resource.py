@@ -8,6 +8,7 @@ from .util import parse_query
 BOX_OFFICE_RANGE = 5000
 graph = Graph(db_session)
 
+
 def generate_query(queries):
     """
     A helper method to get the actor query from queries
@@ -21,20 +22,14 @@ def generate_query(queries):
         if "name" in query:
             query_filter.append(Movie.name.contains(query.get("name")))
         if "year" in query:
-            try:
-                year = int(query.get("year"))
-                query_filter.append(extract('year', Movie.release_date) == year)
-            except ValueError:
-                ...  # skip this argument
+            year = int(query.get("year"))
+            query_filter.append(extract('year', Movie.release_date) == year)
         if "wiki_page" in query:
             query_filter.append(Movie.wiki_page.contains(query.get("name")))
         if "box_office" in query:
-            try:
-                gross = float(query.get("total_gross"))
-                query_filter.append(and_(Movie.box_office >= gross - BOX_OFFICE_RANGE,
-                                         Movie.box_office <= gross + BOX_OFFICE_RANGE))
-            except ValueError:
-                ...  # skip this argument
+            gross = float(query.get("total_gross"))
+            query_filter.append(and_(Movie.box_office >= gross - BOX_OFFICE_RANGE,
+                                     Movie.box_office <= gross + BOX_OFFICE_RANGE))
         if "actor" in query or "actors" in query:
             actor_list = [query.get("actor")] if "actor" in query else query.get("actors").split(',')
             query_filter.append(and_(*[Movie.actors.any(Edge.actor.has(Actor.name.contains(actor_name.strip())))
@@ -51,8 +46,11 @@ class MovieQueryResource(Resource):
 
     @staticmethod
     def get():
-        queries = parse_query(request.query_string.decode("utf-8"))
-        return [movie.to_dict() for movie in Movie.query.filter(generate_query(queries)).all()]
+        try:
+            queries = parse_query(request.query_string.decode("utf-8"))
+            return [movie.to_dict() for movie in Movie.query.filter(generate_query(queries)).all()]
+        except ValueError:
+            abort(400, message="Cannot parse the query")
 
 
 class MovieResource(Resource):
