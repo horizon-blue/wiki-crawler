@@ -1,6 +1,6 @@
 from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.exc import IntegrityError, InvalidRequestError
-from sqlalchemy import extract, func
+from sqlalchemy import extract, func, and_
 from operator import itemgetter
 import matplotlib.pyplot as plt
 import json
@@ -141,7 +141,8 @@ class Graph:
                 movie = Movie(movie_dict)
 
         # find edge
-        edge = Edge.query.filter_by(movie=movie, actor=actor).first()
+
+        edge = Edge.query.filter_by(movie=movie, actor=actor).first() if movie.id and actor.id else None
         if edge is None:
             edge = Edge(actor=actor, movie=movie, income=value)
         elif value is not None:
@@ -298,12 +299,13 @@ class Graph:
         return self.get_actors().join(Edge).join(Movie).filter(extract('year', Movie.release_date) == year).all()
 
     # data analysis methods
-    def get_hub_actor(self, plot=False, n=10):
+    def get_hub_actor(self, plot=False, n=10, save_to=None):
         """
         Get the hub actor in the graph. If plot=True, then a bar graph for the
         top n actor is plotted
         :param plot: boolean, indicates whether or not to plot the chart
         :param n: the number of actors to plot
+        :param save_to: the file name to save the plot
         :return: a list of (actor, count) tuple, sorted in decreasing order
         """
         connection_count = []
@@ -329,12 +331,52 @@ class Graph:
         connection_count = connection_count[:n]
 
         if plot:
+            plt.cla()
+            plt.clf()
+
             actors, count = zip(*connection_count)
             plt.barh(range(n), count)
             plt.yticks(range(n), (actor.name for actor in actors))
             for idx, value in enumerate(count):
                 plt.text(value + 3, idx, str(value))
             plt.title("Top {} Hub Actors".format(n))
-            plt.show()
+            if save_to:
+                plt.savefig(save_to)
+            else:
+                plt.show()
 
         return connection_count
+
+    @staticmethod
+    def get_age_correlation(plot=False, save_to=None):
+        """
+        Get the age group vs total income graph. If plot=True, then a bar graph for the
+        top n actor is plotted
+        :param plot: boolean, indicates whether or not to plot the chart
+        :param save_to: the file name to save the plot
+        :return: a list of (age_group, total_income) tuple, sorted in decreasing order
+        """
+        income_dict = {}
+        # noinspection PyComparisonWithNone
+        actors = Actor.query.filter(and_(Actor.age != None, Actor.total_gross != None)).all()
+
+        for actor in actors:
+            income_dict[actor.age] = income_dict.get(actor.age, 0) + actor.total_gross
+
+        income_list = sorted(income_dict.items(), key=itemgetter(1), reverse=True)
+
+        if plot:
+            plt.cla()
+            plt.clf()
+
+            plt.scatter([actor.age for actor in actors],
+                        [actor.total_gross for actor in actors])
+            plt.xlabel("Age of Actors")
+            plt.ylabel("Total Gross of Actors")
+            plt.yscale("symlog")  # use symlog instead of log to preserve zero value
+            plt.title("Correlation between actors and incomes")
+            if save_to:
+                plt.savefig(save_to)
+            else:
+                plt.show()
+        return income_list
