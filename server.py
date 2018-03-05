@@ -7,6 +7,7 @@ app = Flask(__name__)
 api = Api(app)
 
 api.add_resource(ActorQueryResource, '/actors')
+api.add_resource(ActorResource, '/actors/<string:name>')
 api.add_resource(MovieQueryResource, '/movies')
 
 

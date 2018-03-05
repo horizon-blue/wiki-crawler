@@ -1,11 +1,12 @@
-from flask_restful import Resource
+from flask_restful import Resource, abort
 from flask import request
-from sqlalchemy import and_, or_
-from model.graph import Actor, Edge, Movie
+from database import db_session
+from sqlalchemy import and_, or_, func
+from model.graph import Actor, Edge, Movie, Graph
 from .util import parse_query
 
 GROSS_RANGE = 5000
-
+graph = Graph(db_session)
 
 def generate_query(queries):
     """
@@ -44,9 +45,24 @@ def generate_query(queries):
 class ActorQueryResource(Resource):
     """
     The Flask-Restful Resource class used for creating
-    API for Actor
+    API for Actor query
     """
 
     def get(self):
         queries = parse_query(request.query_string.decode("utf-8"))
         return [actor.to_dict() for actor in Actor.query.filter(generate_query(queries)).all()]
+
+
+class ActorResource(Resource):
+    """
+    The Flask-Restful Resource class used for creating
+    API for a single Actor
+    """
+
+    def get(self, name):
+        actor_name = name.replace("_", " ")
+        actor = Actor.query.filter(func.lower(Actor.name) == func.lower(actor_name)).first()
+        if actor is not None:
+            return actor.to_dict()
+        else:
+            abort(404, message="Actor {} doesn't exist".format(actor_name))

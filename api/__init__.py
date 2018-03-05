@@ -1,4 +1,4 @@
-from .actor_query_resource import ActorQueryResource
-from .movie_query_resource import MovieQueryResource
+from .actor_resource import ActorQueryResource, ActorResource
+from .movie_resource import MovieQueryResource
 
-__all__ = ["ActorQueryResource", "MovieQueryResource"]
+__all__ = ["ActorQueryResource", "ActorResource", "MovieQueryResource"]
