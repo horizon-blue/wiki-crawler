@@ -1,6 +1,8 @@
 from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.exc import IntegrityError, InvalidRequestError
 from sqlalchemy import extract, func
+from operator import itemgetter
+import matplotlib.pyplot as plt
 import json
 from model.graph import Actor, Movie, Edge
 from ..crawler import ActorItem, MovieItem
@@ -294,3 +296,45 @@ class Graph:
         """
         # search through movie
         return self.get_actors().join(Edge).join(Movie).filter(extract('year', Movie.release_date) == year).all()
+
+    # data analysis methods
+    def get_hub_actor(self, plot=False, n=10):
+        """
+        Get the hub actor in the graph. If plot=True, then a bar graph for the
+        top n actor is plotted
+        :param plot: boolean, indicates whether or not to plot the chart
+        :param n: the number of actors to plot
+        :return: a list of (actor, count) tuple, sorted in decreasing order
+        """
+        connection_count = []
+        actors = self.get_actors().all()
+        for actor in actors:
+            if not actor.movies:
+                connection_count.append((actor, 0))
+                continue
+            # storing unique actor id
+            neighbour_ids = set()
+            for edge in actor.movies:
+                neighbour_ids.update(other_edge.actor_id for other_edge in edge.movie.actors)
+            # remove self
+            neighbour_ids.remove(actor.id)
+            connection_count.append((actor, len(neighbour_ids)))
+
+        # sort actor by neighbour count
+        connection_count.sort(key=itemgetter(1), reverse=True)
+
+        n = min(n, len(connection_count))
+        if n <= 0:
+            n = len(connection_count)
+        connection_count = connection_count[:n]
+
+        if plot:
+            actors, count = zip(*connection_count)
+            plt.barh(range(n), count)
+            plt.yticks(range(n), (actor.name for actor in actors))
+            for idx, value in enumerate(count):
+                plt.text(value + 3, idx, str(value))
+            plt.title("Top {} Hub Actors".format(n))
+            plt.show()
+
+        return connection_count
