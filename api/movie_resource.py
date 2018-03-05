@@ -42,6 +42,7 @@ class MovieQueryResource(Resource):
     """
     The Flask-Restful Resource class used for creating
     API for Movie query
+    Operates on: {API_ROOT}/movies
     """
 
     @staticmethod
@@ -65,6 +66,7 @@ class MovieResource(Resource):
     """
     The Flask-Restful Resource class used for creating
     API for a single Movie
+    Operates on: {API_ROOT}/movies/{name}
     """
 
     @staticmethod

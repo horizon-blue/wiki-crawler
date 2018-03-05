@@ -41,6 +41,7 @@ class ActorQueryResource(Resource):
     """
     The Flask-Restful Resource class used for creating
     API for Actor query
+    Operates on: {API_ROOT}/actors
     """
 
     @staticmethod
@@ -64,6 +65,7 @@ class ActorResource(Resource):
     """
     The Flask-Restful Resource class used for creating
     API for a single Actor
+    Operates on: {API_ROOT}/actors/{name}
     """
 
     @staticmethod
