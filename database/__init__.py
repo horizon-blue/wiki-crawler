@@ -21,5 +21,4 @@ Base.query = db_session.query_property()
 def init_db():
     # noinspection PyUnresolvedReferences
     from model.graph import Edge, Movie, Actor
-    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)

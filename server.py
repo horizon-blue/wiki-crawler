@@ -1,19 +1,12 @@
 from flask import Flask
-from flask_restful import Resource, Api
+from flask_restful import Api
 from database import db_session
-from model.graph import Graph
+from api import *
 
 app = Flask(__name__)
 api = Api(app)
-graph = Graph(db_session)
 
-
-class HelloWorld(Resource):
-    def get(self):
-        return {'hello': 'world'}
-
-
-api.add_resource(HelloWorld, '/')
+api.add_resource(ActorResource, '/actors')
 
 
 @app.teardown_appcontext
