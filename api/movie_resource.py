@@ -1,6 +1,6 @@
-from flask_restful import Resource
+from flask_restful import Resource, abort
 from flask import request
-from sqlalchemy import and_, or_, extract
+from sqlalchemy import and_, or_, extract, func
 from model.graph import Actor, Edge, Movie
 from .util import parse_query
 
@@ -45,9 +45,24 @@ def generate_query(queries):
 class MovieQueryResource(Resource):
     """
     The Flask-Restful Resource class used for creating
-    API for Actor
+    API for Movie query
     """
 
     def get(self):
         queries = parse_query(request.query_string.decode("utf-8"))
         return [movie.to_dict() for movie in Movie.query.filter(generate_query(queries)).all()]
+
+
+class MovieResource(Resource):
+    """
+    The Flask-Restful Resource class used for creating
+    API for a single Movie
+    """
+
+    def get(self, name):
+        movie_name = name.replace("_", " ")
+        movie = Movie.query.filter(func.lower(Movie.name) == func.lower(movie_name)).first()
+        if movie is not None:
+            return movie.to_dict()
+        else:
+            abort(404, message="Movie {} doesn't exist".format(movie_name))
