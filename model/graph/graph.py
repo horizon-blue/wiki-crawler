@@ -1,6 +1,6 @@
 from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.exc import IntegrityError, InvalidRequestError
-from sqlalchemy import extract
+from sqlalchemy import extract, func
 import json
 from model.graph import Actor, Movie, Edge
 from ..crawler import ActorItem, MovieItem
@@ -51,15 +51,17 @@ class Graph:
         elif isinstance(item, MovieItem):
             self.add_movie(item)
 
-    def add_actor(self, actor_item, external=False):
+    def add_actor(self, actor_item, external=False, actor=None):
         """
         Create an actor vertex for the given vector, or merge to existing one
         :param actor_item: the ActorItem for the given actor
         :param external: whether we are constructing from external data
+        :param actor: the actor object to receive updates
         """
-        # check if the given actor already existed, search by name or wiki page
-        actor = self.get_actors(name=actor_item.get("name")).first() if external \
-            else self.get_actors(wiki_page=actor_item.get("wiki_page")).first()
+        if actor is None:
+            # check if the given actor already existed, search by name or wiki page
+            actor = self.get_actors(name=actor_item.get("name")).first() if external \
+                else self.get_actors(wiki_page=actor_item.get("wiki_page")).first()
 
         if actor is None:
             actor = Actor(actor_item)
@@ -71,6 +73,12 @@ class Graph:
             self.session.commit()
         except (IntegrityError, InvalidRequestError):  # unlikely to happen, but just in case
             self.session.rollback()
+
+        movies = actor_item.get("movies")
+        if isinstance(movies, list):
+            for movie_key in movies:
+                movie_filter = {"movie_name": movie_key} if external else {"movie_wiki_page": movie_key}
+                self.add_edge(None, actor, **movie_filter)
 
     def add_movie(self, movie_item, external=False):
         """
@@ -88,6 +96,11 @@ class Graph:
             movie.update(movie_item)
         self.session.add(movie)
 
+        try:
+            self.session.commit()
+        except (IntegrityError, InvalidRequestError):  # unlikely to happen, but just in case
+            self.session.rollback()
+
         # add relationship to actors
         # the nth actor have 2 * (m + 1 - n) / (m * (m + 1)) of the movies gross income
         actors = movie_item.get("actors")
@@ -95,30 +108,56 @@ class Graph:
             m = len(actors)
             for index, actor_key in enumerate(actors):
                 n = index + 1
-                actor_filter = {"name": actor_key} if external else {"wiki_page": actor_key}
-                actor = self.get_actors(**actor_filter).first()
-                if actor is None:
-                    actor = Actor(actor_filter)
+                actor_filter = {"actor_name": actor_key} if external else {"actor_wiki_page": actor_key}
                 # do not calculate edge weight if importing external data
                 income = 2 * (m + 1 - n) / (m * (m + 1)) * movie_item.get("box_office", 0) if not external else 0
-                # creates the relationship
-                edge = None
-                if movie.id is not None and actor.id is not None:
-                    edge = Edge.query.filter_by(movie_id=movie.id, actor_id=actor.id).first()
-                if edge is not None:
-                    # replace previous income by current one
-                    actor.total_gross -= edge.income if edge.income is not None else 0
-                    edge.income = income
-                else:
-                    edge = Edge(actor=actor, movie=movie, income=income)
-                actor.total_gross += income
+                self.add_edge(income, movie=movie, **actor_filter)
 
-                self.session.add(actor)
-                self.session.add(edge)
+    def add_edge(self, value, actor=None, movie=None, **kwargs):
+        """
+        A helper function to safely add edge without danger of creating duplicate edge. If
+        actor and movie are specified, the actor_name and movie_name arguments are ignored
+        :param value: the value stored on the edge
+        :param actor: Actor object
+        :param movie: Movie object
+        :param kwargs: the rest filter used to select actor and movie if no object if found
+        :return: the Edge object
+        """
+        if actor is None:
+            actor_dict = {key[len("actor_"):]: val for key, val in kwargs.items() if key.startswith("actor_")}
+            actor = self.get_actors(**actor_dict).first()
+            # non exists
+            if actor is None:
+                actor = Actor(actor_dict)
+        if movie is None:
+            movie_dict = {key[len("movie_"):]: val for key, val in kwargs.items() if key.startswith("movie_")}
+            movie = self.get_movies(**movie_dict).first()
+            # non exists
+            if movie is None:
+                movie = Movie(movie_dict)
+
+        # find edge
+        edge = Edge.query.filter_by(movie=movie, actor=actor).first()
+        if edge is None:
+            edge = Edge(actor=actor, movie=movie, income=value)
+        elif value is not None:
+            actor.total_gross -= edge.income
+            edge.income = value
+
+        if value:
+            actor.total_gross += value
+
+        self.session.add(movie)
+        self.session.add(actor)
+        self.session.add(edge)
+
         try:
             self.session.commit()
         except (IntegrityError, InvalidRequestError):  # unlikely to happen, but just in case
             self.session.rollback()
+
+        return edge
+
 
     @classmethod
     def load(cls, filename, session=None):
@@ -157,6 +196,24 @@ class Graph:
         :return: The actor query
         """
         return Actor.query.filter_by(**kwargs)
+
+    @staticmethod
+    def get_actor(name):
+        """
+        A helper function to get actor by name
+        :param name: name of the actor, case insensitive
+        :return: the first actor with matching name
+        """
+        return Actor.query.filter(func.lower(Actor.name) == func.lower(name)).first()
+
+    @staticmethod
+    def get_movie(name):
+        """
+        A helper function to get movie by name
+        :param name: name of the movie, case insensitive
+        :return: the first movie with matching name
+        """
+        return Movie.query.filter(func.lower(Movie.name) == func.lower(name)).first()
 
     def get_box_office(self, **kwargs):
         """

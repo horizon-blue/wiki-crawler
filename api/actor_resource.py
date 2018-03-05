@@ -60,9 +60,19 @@ class ActorResource(Resource):
     """
 
     def get(self, name):
-        actor_name = name.replace("_", " ")
-        actor = Actor.query.filter(func.lower(Actor.name) == func.lower(actor_name)).first()
+        name = name.replace("_", " ")
+        actor = graph.get_actor(name)
         if actor is not None:
             return actor.to_dict()
         else:
-            abort(404, message="Actor {} doesn't exist".format(actor_name))
+            abort(404, message="Actor {} doesn't exist".format(name))
+
+    def put(self, name):
+        name = name.replace("_", " ")
+        actor = graph.get_actor(name)
+        if actor is None:
+            abort(404, message="Actor {} doesn't exist".format(name))
+        else:
+            changes = request.get_json()
+            graph.add_actor(changes, external=True, actor=actor)
+            return actor.to_dict()

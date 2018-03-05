@@ -1,11 +1,12 @@
 from flask_restful import Resource, abort
 from flask import request
-from sqlalchemy import and_, or_, extract, func
-from model.graph import Actor, Edge, Movie
+from sqlalchemy import and_, or_, extract
+from database import db_session
+from model.graph import Actor, Edge, Movie, Graph
 from .util import parse_query
 
 BOX_OFFICE_RANGE = 5000
-
+graph = Graph(db_session)
 
 def generate_query(queries):
     """
@@ -60,9 +61,9 @@ class MovieResource(Resource):
     """
 
     def get(self, name):
-        movie_name = name.replace("_", " ")
-        movie = Movie.query.filter(func.lower(Movie.name) == func.lower(movie_name)).first()
+        name = name.replace("_", " ")
+        movie = graph.get_movie(name)
         if movie is not None:
             return movie.to_dict()
         else:
-            abort(404, message="Movie {} doesn't exist".format(movie_name))
+            abort(404, message="Movie {} doesn't exist".format(name))
