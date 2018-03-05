@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Text, Boolean, Float, DateTime
+from sqlalchemy import Column, Integer, Text, Float
 from sqlalchemy.orm import relationship
 from database import Base
 from .util import get_wiki_page
