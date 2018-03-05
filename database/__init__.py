@@ -7,9 +7,11 @@ from config import DATABASE_FILE, DIR_PATH
 # get the absolute path of current directory
 DATABASE_ADDRESS = "sqlite:///{}/{}".format(DIR_PATH, DATABASE_FILE)
 
+database_address = "sqlite:///:memory:" if os.environ.get("UNITTEST") else DATABASE_ADDRESS
+
 # reference: http://flask.pocoo.org/docs/0.12/patterns/sqlalchemy/
 
-engine = create_engine(DATABASE_ADDRESS, convert_unicode=True)
+engine = create_engine(database_address, convert_unicode=True)
 db_session = scoped_session(sessionmaker(autocommit=False,
                                          autoflush=False,
                                          bind=engine))

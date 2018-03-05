@@ -58,7 +58,7 @@ class ActorQueryResource(Resource):
         if changes is None:
             abort(400, message="Incorrect mimetype or invalid json")
         else:
-            graph.add_actor(changes, external=True)
+            graph.add_actor(changes, external=True), 201
 
 
 class ActorResource(Resource):
@@ -89,7 +89,7 @@ class ActorResource(Resource):
                 abort(400, message="Incorrect mimetype or invalid json")
             else:
                 graph.add_actor(changes, external=True, actor=actor)
-                return actor.to_dict()
+                return actor.to_dict(), 201
 
     @staticmethod
     def delete(name):
