@@ -80,15 +80,17 @@ class Graph:
                 movie_filter = {"movie_name": movie_key} if external else {"movie_wiki_page": movie_key}
                 self.add_edge(None, actor, **movie_filter)
 
-    def add_movie(self, movie_item, external=False):
+    def add_movie(self, movie_item, external=False, movie=None):
         """
         Create movie vertex for the given movie, and update all actors associate with
         the movie
         :param movie_item: the movie item to add
         :param external: whether we are constructing from external data
+        :param movie: the movie object to receive updates
         """
-        movie = self.get_movies(name=movie_item.get("name")).first() if external \
-            else self.get_movies(wiki_page=movie_item.get("wiki_page")).first()
+        if movie is None:
+            movie = self.get_movies(name=movie_item.get("name")).first() if external \
+                else self.get_movies(wiki_page=movie_item.get("wiki_page")).first()
 
         if movie is None:
             movie = Movie(movie_item)

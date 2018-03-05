@@ -49,7 +49,8 @@ class MovieQueryResource(Resource):
     API for Movie query
     """
 
-    def get(self):
+    @staticmethod
+    def get():
         queries = parse_query(request.query_string.decode("utf-8"))
         return [movie.to_dict() for movie in Movie.query.filter(generate_query(queries)).all()]
 
@@ -60,10 +61,22 @@ class MovieResource(Resource):
     API for a single Movie
     """
 
-    def get(self, name):
+    @staticmethod
+    def get(name):
         name = name.replace("_", " ")
         movie = graph.get_movie(name)
         if movie is not None:
             return movie.to_dict()
         else:
             abort(404, message="Movie {} doesn't exist".format(name))
+
+    @staticmethod
+    def put(name):
+        name = name.replace("_", " ")
+        movie = graph.get_movie(name)
+        if movie is None:
+            abort(404, message="Movie {} doesn't exist".format(name))
+        else:
+            changes = request.get_json()
+            graph.add_movie(changes, external=True, movie=movie)
+            return movie.to_dict()

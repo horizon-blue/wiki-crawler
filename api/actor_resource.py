@@ -1,12 +1,13 @@
 from flask_restful import Resource, abort
 from flask import request
 from database import db_session
-from sqlalchemy import and_, or_, func
+from sqlalchemy import and_, or_
 from model.graph import Actor, Edge, Movie, Graph
 from .util import parse_query
 
 GROSS_RANGE = 5000
 graph = Graph(db_session)
+
 
 def generate_query(queries):
     """
@@ -48,7 +49,8 @@ class ActorQueryResource(Resource):
     API for Actor query
     """
 
-    def get(self):
+    @staticmethod
+    def get():
         queries = parse_query(request.query_string.decode("utf-8"))
         return [actor.to_dict() for actor in Actor.query.filter(generate_query(queries)).all()]
 
@@ -59,7 +61,8 @@ class ActorResource(Resource):
     API for a single Actor
     """
 
-    def get(self, name):
+    @staticmethod
+    def get(name):
         name = name.replace("_", " ")
         actor = graph.get_actor(name)
         if actor is not None:
@@ -67,7 +70,8 @@ class ActorResource(Resource):
         else:
             abort(404, message="Actor {} doesn't exist".format(name))
 
-    def put(self, name):
+    @staticmethod
+    def put(name):
         name = name.replace("_", " ")
         actor = graph.get_actor(name)
         if actor is None:
