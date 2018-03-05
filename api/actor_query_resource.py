@@ -1,11 +1,9 @@
 from flask_restful import Resource
 from flask import request
 from sqlalchemy import and_, or_
-from database import db_session
-from model.graph import Actor, Graph, Edge, Movie
+from model.graph import Actor, Edge, Movie
 from .util import parse_query
 
-graph = Graph(db_session)
 GROSS_RANGE = 5000
 
 
@@ -43,7 +41,7 @@ def generate_query(queries):
     return or_(*filters)
 
 
-class ActorResource(Resource):
+class ActorQueryResource(Resource):
     """
     The Flask-Restful Resource class used for creating
     API for Actor

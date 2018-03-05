@@ -6,8 +6,8 @@ from api import *
 app = Flask(__name__)
 api = Api(app)
 
-api.add_resource(ActorResource, '/actors')
-api.add_resource(MovieResource, '/movies')
+api.add_resource(ActorQueryResource, '/actors')
+api.add_resource(MovieQueryResource, '/movies')
 
 
 @app.teardown_appcontext
