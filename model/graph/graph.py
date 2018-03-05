@@ -160,7 +160,6 @@ class Graph:
 
         return edge
 
-
     @classmethod
     def load(cls, filename, session=None):
         """
@@ -216,6 +215,19 @@ class Graph:
         :return: the first movie with matching name
         """
         return Movie.query.filter(func.lower(Movie.name) == func.lower(name)).first()
+
+    def delete_actor(self, actor):
+        """
+        helper method to delete the given Actor object
+        :param actor:
+        :return:
+        """
+        self.session.delete(actor)
+        self.session.commit()
+
+    def delete_movie(self, movie):
+        self.session.delete(movie)
+        self.session.commit()
 
     def get_box_office(self, **kwargs):
         """

@@ -23,7 +23,7 @@ class Movie(Base):
     release_date = Column(DateTime)
 
     # relationship to actors
-    actors = relationship("Edge", back_populates="movie")
+    actors = relationship("Edge", back_populates="movie", cascade="all, delete-orphan")
 
     def __init__(self, item=None):
         """

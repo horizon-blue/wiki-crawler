@@ -21,7 +21,7 @@ class Actor(Base):
     total_gross = Column(Float)
 
     # relationship to movies
-    movies = relationship("Edge", back_populates="actor")
+    movies = relationship("Edge", back_populates="actor", cascade="all, delete-orphan")
 
     def __init__(self, item=None):
         """

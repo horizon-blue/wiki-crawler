@@ -52,6 +52,14 @@ class MovieQueryResource(Resource):
         except ValueError:
             abort(400, message="Cannot parse the query")
 
+    @staticmethod
+    def post():
+        changes = request.get_json()
+        if changes is None:
+            abort(400, message="Incorrect mimetype or invalid json")
+        else:
+            graph.add_movie(changes, external=True)
+
 
 class MovieResource(Resource):
     """
@@ -76,5 +84,17 @@ class MovieResource(Resource):
             abort(404, message="Movie {} doesn't exist".format(name))
         else:
             changes = request.get_json()
-            graph.add_movie(changes, external=True, movie=movie)
-            return movie.to_dict()
+            if changes is None:
+                abort(400, message="Incorrect mimetype or invalid json")
+            else:
+                graph.add_movie(changes, external=True, movie=movie)
+                return movie.to_dict()
+
+    @staticmethod
+    def delete(name):
+        name = name.replace("_", " ")
+        movie = graph.get_movie(name)
+        if movie is None:
+            abort(404, message="Movie {} doesn't exist".format(name))
+        else:
+            graph.delete_movie(movie)

@@ -51,6 +51,14 @@ class ActorQueryResource(Resource):
         except ValueError:
             abort(400, message="Cannot parse the query")
 
+    @staticmethod
+    def post():
+        changes = request.get_json()
+        if changes is None:
+            abort(400, message="Incorrect mimetype or invalid json")
+        else:
+            graph.add_actor(changes, external=True)
+
 
 class ActorResource(Resource):
     """
@@ -75,5 +83,17 @@ class ActorResource(Resource):
             abort(404, message="Actor {} doesn't exist".format(name))
         else:
             changes = request.get_json()
-            graph.add_actor(changes, external=True, actor=actor)
-            return actor.to_dict()
+            if changes is None:
+                abort(400, message="Incorrect mimetype or invalid json")
+            else:
+                graph.add_actor(changes, external=True, actor=actor)
+                return actor.to_dict()
+
+    @staticmethod
+    def delete(name):
+        name = name.replace("_", " ")
+        actor = graph.get_actor(name)
+        if actor is None:
+            abort(404, message="Actor {} doesn't exist".format(name))
+        else:
+            graph.delete_actor(actor)

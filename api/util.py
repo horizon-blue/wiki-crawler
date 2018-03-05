@@ -18,6 +18,9 @@ def parse_query(query_string):
     :return: a list of dictionary represents the query
     """
     result = []
+    if query_string is None or query_string == "":
+        return result
+
     for query in query_string.split('|'):
         query_dict = {}
         for attr in query.split('&'):
