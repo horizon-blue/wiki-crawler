@@ -298,7 +298,6 @@ class Graph:
         # search through movie
         return self.get_actors().join(Edge).join(Movie).filter(extract('year', Movie.release_date) == year).all()
 
-    # data analysis methods
     def get_hub_actor(self, plot=False, n=10, save_to=None):
         """
         Get the hub actor in the graph. If plot=True, then a bar graph for the

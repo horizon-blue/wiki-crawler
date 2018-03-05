@@ -129,3 +129,7 @@ class TestAPI(TestCase):
     def test_actor_query(self):
         actors = self.get_actor_query("name=Willis")
         self.assertEqual(len(actors), 1)
+
+    def test_movie_query(self):
+        movies = self.get_movie_query("name=Hard")
+        self.assertEqual(len(movies), 1)
